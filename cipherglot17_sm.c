@@ -843,13 +843,11 @@ void Cipher_Error(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uint8_
 	CipherPrint(0x11);			HAL_Delay(100);
 
 	Beeper(1);
-	//MaxNumb = MaxNumb%100;
 	CipherPrint((MaxNumb%100)/10);	HAL_Delay(500);
 	CipherPrint(0x11);			HAL_Delay(100);
 
 	Beeper(1);
-	MaxNumb = MaxNumb%10;
-	CipherPrint(MaxNumb);		HAL_Delay(500);
+	CipherPrint(MaxNumb%10);		HAL_Delay(500);
 	CipherPrint(0x11);			HAL_Delay(500);
 
 	// COUT TIME
