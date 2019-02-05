@@ -109,7 +109,7 @@ void CipherGlot_init(void)
 
 	HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
 
-	sprintf(DataChar,"\r\nCipherGlot-17\r\nUART1 for debug Start\r\nSpeed 38400\r\n");
+	sprintf(DataChar,"\r\n CipherGlot-17\r\nUART1 for debug started on speed 38400\r\n Press any key...\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	// Test_Segment();
@@ -139,6 +139,10 @@ void CipherGlot_init(void)
 
 	sprintf(DataChar,"Init - Ok\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+//	sprintf(DataChar,"hint: %X\r\n", (int)cipher_arr_u8[start_cipher_number_u32]);
+//	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
 	HAL_TIM_Base_Start_IT(&htim4); // start TIM4 prompt
 }
 //**********************************************************************
@@ -215,6 +219,7 @@ void CipherGlot_main(void)
 			error_status_u8 = 0;
 			Cipher_OK();
 			current_cipher_number_u32++;
+
 			TIM4->CNT = 0;
 			set_Prompt(0);
 		}
@@ -244,7 +249,12 @@ void CipherGlot_main(void)
 	while ((current_cipher_number_u32 <= total_cipher_number_u32 ) && ( error_status_u8 < 2 ));
 
 	HAL_TIM_Base_Stop(&htim4); // stop TIM4 prompt
-	if ( error_status_u8 == 0 ) total_cipher_number_u32++;
+	if ( error_status_u8 == 0 )
+		{
+		total_cipher_number_u32++;
+		sprintf(DataChar,"qnt: %d\r\n", (int)(total_cipher_number_u32 - start_cipher_number_u32));
+		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+		}
 
 	if (total_cipher_number_u32 >= END_NUMBER)
 	{
@@ -715,12 +725,18 @@ uint8_t ScanKeyBoard(void)
 	TIM4->CNT = 0;
 	set_Prompt(0);
 
+	static uint8_t previous_cipher_u8;
 	do
 	{
 		if (Prompt_Status() == 1 )
 		{
-			sprintf(DataChar,"prompt: %d\r\n", (int)cipher_arr_u8[current_cipher_number_u32]);
-			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+			if (previous_cipher_u8 != cipher_arr_u8[current_cipher_number_u32])
+			{
+				sprintf(DataChar,"hint: %X\r\n", (int)cipher_arr_u8[current_cipher_number_u32]);
+				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+				previous_cipher_u8 = cipher_arr_u8[current_cipher_number_u32];
+			}
+
 			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 			HAL_Delay(200);
 			CipherPrint(0x11);
@@ -838,22 +854,28 @@ void Cipher_Error(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uint8_
 	Beeper(2);					HAL_Delay(300);
 
 	MaxNumb = MaxNumb - StartNumb;
+
+	sprintf(DataChar,"MaxNumb: %d\r\n", (int)MaxNumb);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
 	Beeper(1);
 	CipherPrint(MaxNumb/100);	HAL_Delay(500);
 	CipherPrint(0x11);			HAL_Delay(100);
 
 	Beeper(1);
-	//MaxNumb = MaxNumb%100;
 	CipherPrint((MaxNumb%100)/10);	HAL_Delay(500);
 	CipherPrint(0x11);			HAL_Delay(100);
 
 	Beeper(1);
-	MaxNumb = MaxNumb%10;
-	CipherPrint(MaxNumb);		HAL_Delay(500);
+	CipherPrint(MaxNumb%10);		HAL_Delay(500);
 	CipherPrint(0x11);			HAL_Delay(500);
 
 	// COUT TIME
 	KeyPressed();
+
+	sprintf(DataChar,"Time %d:%d\r\n", (int)_StopHour_u8, (int)_StopMin_u8);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
 	//Beeper(2);					HAL_Delay(300);
 	Beeper(2);					HAL_Delay(300);
 	Beeper(2);					HAL_Delay(300);
