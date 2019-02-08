@@ -125,17 +125,26 @@ void CipherGlot_init(void)
 			uint32_t flash_value_u32;
 
 			flash_value_u32 = Flash_Read(MY_FLASH_PAGE_ADDR);
-
 			start_cipher_number_u32 = (flash_value_u32 & 0x0000ffff)       ;
 			total_cipher_number_u32 = ((flash_value_u32 & 0xffff0000)>>16) ;
 			previous_cipher_number_u32 = total_cipher_number_u32;
 
+			flash_value_u32 = Flash_Read(MY_FLASH_PAGE_ADDR + 4);	//	read Time
+			TimeStruct.Hours   = (flash_value_u32 & 0x00ff0000) >> 16 ;
+			TimeStruct.Minutes = (flash_value_u32 & 0x0000ff00) >> 8  ;
+			TimeStruct.Seconds = (flash_value_u32 & 0x000000ff)       ;
+			HAL_RTC_SetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
+
+			sprintf(DataChar,"load time %u:%02u:%02u\r\n", TimeStruct.Hours, TimeStruct.Minutes, TimeStruct.Seconds);
+			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+
 			sprintf(DataChar,"start_cipher_number: %d\r\ntotal_cipher_number: %d\r\n", (int)start_cipher_number_u32, (int)(total_cipher_number_u32 - start_cipher_number_u32));
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-			for (uint32_t flash_addr_u32 = 0; flash_addr_u32 < 0xFF; flash_addr_u32++)
+			for (uint32_t flash_addr_u32 = 0; flash_addr_u32 < 0xFA; flash_addr_u32++)
 			{
-				flash_value_u32 = Flash_Read(MY_FLASH_PAGE_ADDR + (flash_addr_u32 + 1) * 4) ;
+				flash_value_u32 = Flash_Read(MY_FLASH_PAGE_ADDR + (flash_addr_u32 + 2) * 4) ;
 
 				cipher_arr_u8[flash_addr_u32 * 4 + 1 ] = (flash_value_u32 & 0x000000ff)     ;
 				cipher_arr_u8[flash_addr_u32 * 4 + 2 ] = (flash_value_u32 & 0x0000ff00)>>8  ;
@@ -316,22 +325,28 @@ void CipherGlot_main(void)
 
 					uint32_t flash_value_u32;
 
-					sprintf(DataChar,"start_cipher_number: %d\r\ntotal_cipher_number: %d", (int)start_cipher_number_u32, (int)total_cipher_number_u32);
+					sprintf(DataChar,"start_cipher_number: %d\r\ntotal_cipher_number: %d\r\n", (int)start_cipher_number_u32, (int)total_cipher_number_u32);
 					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-					flash_value_u32 = start_cipher_number_u32 + (total_cipher_number_u32<<16);
+					flash_value_u32 = start_cipher_number_u32 + (total_cipher_number_u32 << 16);
 					Flash_Write( MY_FLASH_PAGE_ADDR, flash_value_u32);
 
-					for (uint32_t flash_addr_u32 = 0; flash_addr_u32 < 0xFF; flash_addr_u32++)
+					flash_value_u32 = (stop_hours_u8 << 16) + (stop_minutes_u8 << 8) + stop_second_u8;
+					Flash_Write( MY_FLASH_PAGE_ADDR + 4, flash_value_u32);
+
+					sprintf(DataChar,"write time %u:%02u:%02u\r\n", stop_hours_u8, stop_minutes_u8, stop_second_u8);
+					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+					for (uint32_t flash_addr_u32 = 0; flash_addr_u32 < 0xFA; flash_addr_u32++)
 					{
-						flash_value_u32 = (cipher_arr_u8[flash_addr_u32 * 4 + 1 ]     )
-										+ (cipher_arr_u8[flash_addr_u32 * 4 + 2 ]<< 8 )
-										+ (cipher_arr_u8[flash_addr_u32 * 4 + 3 ]<<16 )
-										+ (cipher_arr_u8[flash_addr_u32 * 4 + 4 ]<<24 ) ;
-						Flash_Write( (MY_FLASH_PAGE_ADDR + (flash_addr_u32 + 1) * 4), flash_value_u32);
+						flash_value_u32 = (cipher_arr_u8[flash_addr_u32 * 4 + 1 ]       )
+										+ (cipher_arr_u8[flash_addr_u32 * 4 + 2 ] <<  8 )
+										+ (cipher_arr_u8[flash_addr_u32 * 4 + 3 ] << 16 )
+										+ (cipher_arr_u8[flash_addr_u32 * 4 + 4 ] << 24 ) ;
+						Flash_Write( (MY_FLASH_PAGE_ADDR + (flash_addr_u32 + 2) * 4), flash_value_u32);
 					}
 					HAL_FLASH_Lock();
-					sprintf(DataChar,"\r\n-> Finish write to flash.\r\n\r\n");
+					sprintf(DataChar,"-> Finish write to flash.\r\n\r\n");
 					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 				}
 				else
@@ -448,13 +463,14 @@ void Cipher_Error(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uint8_
 
 	if (KeyPressed() == 0x0E)
 	{
-		CipherPrint(0x0e);
+		CipherPrint(0x0E);
 		Beeper(1);
 		char http_req[200];
 		sprintf(http_req, "&field8=%d\r\n\r\n", (int)MaxNumb );
 		RingBuffer_DMA_Connect();
+		CipherPrint(0x11);
 		Beeper(1);
-		CipherPrint(0x12);
+		CipherPrint(0x0E);
 
 		RingBuffer_DMA_Main(http_req);
 		Beeper(1);
