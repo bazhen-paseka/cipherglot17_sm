@@ -106,7 +106,7 @@ void CipherGlot_init(void)
 
 	HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
 
-	sprintf(DataChar,"\r\n CipherGlot-17\r\nUART1 for debug started on speed 38400\r\n");
+	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-12 v1.4.1 \r\nUART1 for debug started on speed 38400\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	sprintf(DataChar,"Press:\r\n 1 - load previous;\r\n 3 - load Pi;\r\n any key - start new.\r\n");
