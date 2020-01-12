@@ -105,7 +105,7 @@ void CipherGlot_init(void) {
 
 	HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
 
-	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-12 v1.4.2 \r\nUART1 for debug started on speed 38400\r\n");
+	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-12 v1.5.0 \r\nUART1 for debug started on speed 38400\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	sprintf(DataChar,"Press:\r\n 1 - load previous;\r\n 3 - load Pi;\r\n any key - start new.\r\n");
@@ -467,21 +467,29 @@ void Generate_New_Cipher (void) {
 	if (game_type_u8 == 3)	return;
 	if ((game_type_u8 == 1) && (current_cipher_number_u32 <= previous_cipher_number_u32)) return;
 
-	if ( total_cipher_number_u32 % 4 == 0 ) {
-		do {
-			cipher_arr_u8[total_cipher_number_u32] = rand()%6 + 10; // generate char: 'A' .. 'F'
-		}
-		while ( (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 4]) );
+	//		Generate_New_Cipher with letter char
+	//	if ( total_cipher_number_u32 % 4 == 0 ) {
+	//		do {
+	//			cipher_arr_u8[total_cipher_number_u32] = rand()%6 + 10; // generate char: 'A' .. 'F'
+	//		}
+	//		while ( (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 4]) );
+	//	}
+	//	else {
+	//		do {
+	//			cipher_arr_u8[total_cipher_number_u32] = rand()%10; // 0x00 .. 0x0F
+	//		}
+	//		while ( (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 1]) ||
+	//				(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 2]) ||
+	//				(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 3]) ||
+	//				(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 4])  );
+	//	}
+
+	do {
+		cipher_arr_u8[total_cipher_number_u32] = rand()%10; // 0x00 .. 0x0F
 	}
-	else {
-		do {
-			cipher_arr_u8[total_cipher_number_u32] = rand()%10; // 0x00 .. 0x0F
-		}
-		while ( (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 1]) ||
-				(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 2]) ||
-				(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 3]) ||
-				(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 4])  );
-	}
+	while ( (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 1]) ||
+			(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 2]) ||
+			(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 3]) );
 
 	sprintf(DataChar,"generate new Cipher: %X\r\n", cipher_arr_u8[total_cipher_number_u32]);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
