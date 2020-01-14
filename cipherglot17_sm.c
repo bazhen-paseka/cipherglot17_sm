@@ -90,6 +90,9 @@ void BeepError3 (void);
 void TheEnd (void);
 void Test_Segment (void);
 
+void BlankIndicatorStart (void);
+void BlankIndicatorStop (void);
+
 uint8_t ScanKeyBoard (void);
 uint8_t KeyPressed (void);
 uint8_t TestLED (void);
@@ -103,7 +106,8 @@ void CipherGlot_init(void) {
 	MX_TIM4_Init();
 	MX_USART1_UART_Init();
 
-	HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
+	//HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
+	BlankIndicatorStart();
 
 	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-12 v1.5.0 \r\nUART1 for debug started on speed 38400\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -185,7 +189,7 @@ void CipherGlot_init(void) {
 			  cipher_arr_u8[1] = rand()%10; // 0..9
 			  cipher_arr_u8[2] = rand()%10;
 			  cipher_arr_u8[3] = rand()%10;
-			  cipher_arr_u8[4] = rand()%6 + 10; // A .. F
+			  cipher_arr_u8[4] = rand()%10;
 		  }
 		  while (	(cipher_arr_u8[1] == cipher_arr_u8[2])
 				 ||	(cipher_arr_u8[2] == cipher_arr_u8[3])
@@ -287,6 +291,7 @@ void CipherGlot_main(void) {
 				Cipher_Error(start_cipher_number_u32, current_cipher_number_u32, total_cipher_number_u32 + 1, stop_hours_u8, stop_minutes_u8, stop_second_u8 );
 
 				CipherPrint(0x0F);
+				BlankIndicatorStop();
 				sprintf(DataChar,"** Press button 'F' to write to flash **\r\n");
 				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
@@ -335,6 +340,7 @@ void CipherGlot_main(void) {
 				}
 
 				HAL_Delay(2000);
+				BlankIndicatorStart();
 
 				if (game_type_u8 != 1) {
 					total_cipher_number_u32 = start_cipher_number_u32;
@@ -1078,4 +1084,12 @@ void BeepError3(void) {
 }
 //**********************************************************************
 
+void BlankIndicatorStart (void) {
+	HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
+}
+//**********************************************************************
+
+void BlankIndicatorStop (void) {
+	HAL_TIM_Base_Stop_IT(&htim3); // start TIM3 interupt
+}
 //**********************************************************************
