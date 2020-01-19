@@ -1,4 +1,4 @@
-#define SOFT_VERSION 	362
+#define SOFT_VERSION 	171
 
 	// TIM2 Sound on port PA1
 	// TIM3 timer LED Off = 2 sec
@@ -1017,6 +1017,7 @@ void CipherPrint (uint8_t num) {
 uint8_t TestLED(void) {
 	uint8_t start_key_u8 = 0;
 
+	CipherPrint(0x27);
 	Beeper_12();
 	Beeper_11();
 	start_key_u8 = KeyPressed();
