@@ -87,6 +87,8 @@ void CipherPrint (uint8_t);
 void BeepCipher_OK(uint8_t _cipher);
 void BeepCipherError(uint32_t, uint32_t, uint32_t, uint8_t, uint8_t, uint8_t);
 void Beeper (uint8_t);
+void Beeper_11(void);
+void Beeper_12(void);
 void BeepError2 (void);
 void BeepError3 (void);
 void TheEnd (void);
@@ -235,25 +237,25 @@ void CipherGlot_main(void) {
 	if ((game_type_u8 == 3) && (total_cipher_number_u32 == start_cipher_number_u32) ) {
 		uint8_t start_numb_arr_u8[3]  = {0,0,0} ;
 
-		Beeper(11);
+		Beeper_11();
 		CipherPrint(0x11);
 		Segment_A(1);
 		start_numb_arr_u8[0] = KeyPressed();
-		Beeper(12);
+		Beeper_12();
 		CipherPrint(start_numb_arr_u8[0]);
 		HAL_Delay(500);
 
 		CipherPrint(0x11);
 		Segment_G(1);
 		start_numb_arr_u8[1] = KeyPressed();
-		Beeper(12);
+		Beeper_12();
 		CipherPrint(start_numb_arr_u8[1]);
 		HAL_Delay(500);
 
 		CipherPrint(0x11);
 		Segment_D(1);
 		start_numb_arr_u8[2] = KeyPressed();
-		Beeper(12);
+		Beeper_12();
 		CipherPrint(start_numb_arr_u8[2]);
 		HAL_Delay(300);
 		total_cipher_number_u32 = 100*start_numb_arr_u8[0] + 10*start_numb_arr_u8[1] + start_numb_arr_u8[2];
@@ -311,7 +313,7 @@ void CipherGlot_main(void) {
 				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 				if (KeyPressed() == 0x0F) {
-					Beeper(11);
+					Beeper_11();
 					CipherPrint(0x11);
 					HAL_Delay(300);
 					CipherPrint(0x0F);
@@ -348,7 +350,7 @@ void CipherGlot_main(void) {
 					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 				}
 				else {
-					Beeper(11);
+					Beeper_11();
 					CipherPrint(0x15);
 					sprintf(DataChar,"-- NO write to Flash --\r\n");
 					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -383,18 +385,18 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 
 	//  COUT Current Number
 		//	KeyPressed();
-		//	Beeper(12);					HAL_Delay(300);
+		//	Beeper_12();					HAL_Delay(300);
 		//
-		//	Beeper(11);
+		//	Beeper_11();
 		//	CipherPrint(CurNumb/100);	HAL_Delay(500);
 		//	CipherPrint(0x11);			HAL_Delay(100);
 		//
-		//	Beeper(11);
+		//	Beeper_11();
 		//	CurNumb = CurNumb%100;
 		//	CipherPrint(CurNumb/10);	HAL_Delay(500);
 		//	CipherPrint(0x11);			HAL_Delay(100);
 		//
-		//	Beeper(11);
+		//	Beeper_11();
 		//	CurNumb = CurNumb%10;
 		//	CipherPrint(CurNumb);		HAL_Delay(500);
 		//	CipherPrint(0x11);			HAL_Delay(500);
@@ -406,23 +408,23 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	KeyPressed();
-	//Beeper(12);					HAL_Delay(300);
-	Beeper(12);						HAL_Delay(300);
+	//Beeper_12();					HAL_Delay(300);
+	Beeper_12();						HAL_Delay(300);
 
 	MaxNumb = MaxNumb - StartNumb;
 
 	sprintf(DataChar,"Total cipher numb: %d\r\n", (int)MaxNumb);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint(MaxNumb/100);		HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(100);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint((MaxNumb%100)/10);	HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(100);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint(MaxNumb%10);		HAL_Delay(500);
 
 	CipherPrint(0x26);				HAL_Delay(500);	// 't'
@@ -436,19 +438,19 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 	sprintf(DataChar,"Time %d:%02d:%02d\r\n", (int)_StopHour_u8, (int)_StopMin_u8, (int)_StopSec_u8);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	//Beeper(12);					HAL_Delay(300);
-	Beeper(12);						HAL_Delay(300);
-	Beeper(12);						HAL_Delay(300);
+	//Beeper_12();					HAL_Delay(300);
+	Beeper_12();						HAL_Delay(300);
+	Beeper_12();						HAL_Delay(300);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint(_StopHour_u8 % 10);	HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(100);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint(_StopMin_u8 / 10);	HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(100);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint(_StopMin_u8 % 10);	HAL_Delay(500);
 
 	CipherPrint(0x0E);
@@ -458,21 +460,21 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 
 	if (KeyPressed() == 0x0E) {
 		CipherPrint(0x0E);
-		Beeper(11);
+		Beeper_11();
 		char http_req[200];
 		sprintf(http_req, "&field8=%d\r\n\r\n", (int)MaxNumb );
 		RingBuffer_DMA_Connect();
 		CipherPrint(0x11);
-		Beeper(11);
+		Beeper_11();
 		CipherPrint(0x0E);
 
 		RingBuffer_DMA_Main(http_req);
-		Beeper(11);
+		Beeper_11();
 		CipherPrint(0x11);
 		//HAL_Delay(1000);
 	}
 	else {
-		Beeper(11);
+		Beeper_11();
 		CipherPrint(0x24);
 		sprintf(DataChar,"-- NO send to ThingSpeak --\r\n");
 		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -480,7 +482,7 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 	}
 	BlankIndicatorStart();
 //	KeyPressed();
-//	Beeper(11);
+//	Beeper_11();
 //	HAL_Delay(1000);
 }
 //**********************************************************************
@@ -666,42 +668,42 @@ void Test_Segment(void) {
 
 	#define SEGMENT_SHOW_MS	200
 
-	Beeper(11);
+	Beeper_11();
 	Segment_B(1);
 	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_B(0);
 
-	Beeper(11);
+	Beeper_11();
 	Segment_C(1);
 	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_C(0);
 
-	Beeper(11);
+	Beeper_11();
 	Segment_E(1);
 	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_E(0);
 
-	Beeper(11);
+	Beeper_11();
 	Segment_F(1);
 	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_F(0);
 
-	Beeper(11);
+	Beeper_11();
 	Segment_A(1);
 	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_A(0);
 
-	Beeper(11);
+	Beeper_11();
 	Segment_G(1);
 	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_G(0);
 
-	Beeper(11);
+	Beeper_11();
 	Segment_D(1);
 	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_D(0);
 
-	Beeper(11);
+	Beeper_11();
 	Segment_P(1);
 	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_P(0);
@@ -1015,17 +1017,17 @@ void CipherPrint (uint8_t num) {
 uint8_t TestLED(void) {
 	uint8_t start_key_u8 = 0;
 
-	Beeper(12);
-	Beeper(11);
+	Beeper_12();
+	Beeper_11();
 	start_key_u8 = KeyPressed();
-	Beeper(11);
+	Beeper_11();
 	srand(start_key_u8);
 	CipherPrint(start_key_u8);
 	HAL_Delay(500);
 
 	if (start_key_u8 != 1) {
 		for (uint32_t i=0; i<=start_key_u8 ; i++) {
-			Beeper(11);
+			Beeper_11();
 			CipherPrint(i);
 			HAL_Delay(300);
 		}
@@ -1040,11 +1042,11 @@ uint8_t TestLED(void) {
 
 void PrintSoftVersion(int *_soft_version_arr_int) {
 	HAL_Delay(1000);
-	Beeper(12);
-	Beeper(11);
+	Beeper_12();
+	Beeper_11();
 	HAL_Delay(500);
 	for (uint32_t i=0; i<3 ; i++) {
-		Beeper(11);
+		Beeper_11();
 		CipherPrint(_soft_version_arr_int[i]);
 		HAL_Delay(300);
 	}
@@ -1070,50 +1072,76 @@ uint8_t KeyPressed(void) {
 }
 //**********************************************************************
 
-void Beeper(uint8_t type) {
+void Beeper_12(void) {
 	TIM2->CNT = 0;
-//	if (type == 11) {
-//		TIM2->ARR  = 1000;
-//		TIM2->CCR1 =  500;
-//		HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
-//		HAL_Delay(20);
-//		HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-//	}
-	if (type >= 12) {
-		TIM2->ARR  = 2000;
-		TIM2->CCR1 = 1000;
-		HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
-		HAL_Delay(80);
-		HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-	} else if (type > 9) {
-		TIM2->ARR  = 1000;
-		TIM2->CCR1 =  500;
-		HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
-		HAL_Delay(20);
-		HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-	} else {
-		TIM2->ARR  = (uint32_t)(type + 5) * 150;
-		TIM2->CCR1 = (uint32_t)(type + 5) *  75;
-		HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
-		HAL_Delay(50);
-		HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-	}
+	TIM2->ARR  = 2000;
+	TIM2->CCR1 = 1000;
+	HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
+	HAL_Delay(80);
+	HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
+}
+//**********************************************************************
+
+void Beeper_11(void) {
+	TIM2->CNT = 0;
+	TIM2->ARR  = 1000;
+	TIM2->CCR1 =  500;
+	HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
+	HAL_Delay(20);
+	HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
+}
+//**********************************************************************
+
+void Beeper(uint8_t type) {
+	uint32_t nota_arr_u32[12];	//	arr = 2`000`000 / F;
+//	nota_arr_u32[ 0] = 7692;		//	260	do C4
+//	nota_arr_u32[ 1] = 6800;		//	294 re D4
+//	nota_arr_u32[ 2] = 6060;		//	330 me E4
+//	nota_arr_u32[ 3] = 5714;		//	350 fa F4
+//	nota_arr_u32[ 4] = 5128;		//	390 so G4
+//	nota_arr_u32[ 5] = 4544;		//	440 la A4
+//	nota_arr_u32[ 6] = 4048;		//	494 se B4
+//	nota_arr_u32[ 7] = 3816;		//	524 do C5
+//	nota_arr_u32[ 8] = 3400;		//	588 re D5
+//	nota_arr_u32[ 9] = 3030;		//	660 me E5
+//	nota_arr_u32[10] = 2856;		//	700 fa F5
+//	nota_arr_u32[11] = 2564;		//	780 so G5
+
+	nota_arr_u32[ 0] = 6804;		//	re	D4	294
+	nota_arr_u32[ 1] = 5732;		//	fa	F4	349
+	nota_arr_u32[ 2] = 4546;		//	la	A4	440
+	nota_arr_u32[ 3] = 3824;		//	do	C5	523
+	nota_arr_u32[ 4] = 3036;		//	me	E5	659
+	nota_arr_u32[ 5] = 2554;		//	so	G5	783
+	nota_arr_u32[ 6] = 2024;		//	se	B5	988
+	nota_arr_u32[ 7] = 1704;		//	re	D6	1174
+	nota_arr_u32[ 8] = 1433;		//	fa	F6	1396
+	nota_arr_u32[ 9] = 1136;		//	la	A6	1760
+	nota_arr_u32[10] =  956;		//	do	C7	2093
+	nota_arr_u32[11] =  758;		//	me	E7	2637
+
+	TIM2->CNT = 0;
+	TIM2->ARR  = (nota_arr_u32[type])      ;
+	TIM2->CCR1 = (nota_arr_u32[type]) >> 1 ;
+	HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
+	HAL_Delay(50);
+	HAL_TIM_PWM_Stop (&htim2,TIM_CHANNEL_1);
 }
 //**********************************************************************
 
 void TheEnd(void) {
-	Beeper(12);
-	Beeper(11);
-	Beeper(12);
+	Beeper_12();
+	Beeper_11();
+	Beeper_12();
 	CipherPrint(0x09);
 }
 //**********************************************************************
 
 void BeepCipher_OK(uint8_t _cipher) {
 	Beeper(_cipher);
-	CipherPrint(0x10); // point
+	//CipherPrint(0x10); // point
 	HAL_Delay(200);
-	CipherPrint(0x11); // blank
+	//CipherPrint(0x11); // blank
 }
 //**********************************************************************
 
@@ -1133,19 +1161,19 @@ void set_Blank(uint8_t new_blank_u8) {
 //**********************************************************************
 
 void BeepError2(void) {
-	Beeper(12);	CipherPrint(0x12);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x13);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x11);	HAL_Delay(500);
+	Beeper_12();	CipherPrint(0x12);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x13);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x11);	HAL_Delay(500);
 }
 //**********************************************************************
 
 void BeepError3(void) {
-	Beeper(12);	CipherPrint(0x12);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x13);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x12);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x13);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x12);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x11);	HAL_Delay(1000);
+	Beeper_12();	CipherPrint(0x12);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x13);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x12);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x13);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x12);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x11);	HAL_Delay(1000);
 	CipherPrint(0x10);
 }
 //**********************************************************************
