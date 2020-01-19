@@ -1,3 +1,5 @@
+#define SOFT_VERSION 	362
+
 	// TIM2 Sound on port PA1
 	// TIM3 timer LED Off = 2 sec
 	// TIM4 prompt current cipher
@@ -97,6 +99,10 @@ uint8_t ScanKeyBoard (void);
 uint8_t KeyPressed (void);
 uint8_t TestLED (void);
 uint8_t Prompt_Status (void);
+
+void PrintSoftVersion(int *_soft_version_arr_int);
+void Prompt_Start(void);
+
 //**********************************************************************
 
 void CipherGlot_init(void) {
@@ -109,13 +115,20 @@ void CipherGlot_init(void) {
 	//HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
 	BlankIndicatorStart();
 
-	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-19 v1.6.0 Migrate CubeMX\r\nUART1 for debug started on speed 38400\r\n");
+	int soft_version_arr_int[3];
+	soft_version_arr_int[0] = ((SOFT_VERSION) / 100)     ;
+	soft_version_arr_int[1] = ((SOFT_VERSION) /  10) %10 ;
+	soft_version_arr_int[2] = ((SOFT_VERSION)      ) %10 ;
+
+	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-19 v%d.%d.%d Migrate CubeMX\r\nUART1 for debug started on speed 38400\r\n",
+			soft_version_arr_int[0],soft_version_arr_int[2],soft_version_arr_int[2]);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	sprintf(DataChar,"Press:\r\n 1 - load previous;\r\n 3 - load Pi;\r\n any key - start new.\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	// Test_Segment();
+	Test_Segment();
+	PrintSoftVersion(soft_version_arr_int);
 	game_type_u8 = TestLED();
 
 	switch (game_type_u8) {
@@ -204,7 +217,8 @@ void CipherGlot_init(void) {
 	sprintf(DataChar,"Init - Ok\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	HAL_TIM_Base_Start_IT(&htim4); // start TIM4 prompt
+	//	HAL_TIM_Base_Start_IT(&htim4); // start TIM4 prompt
+	Prompt_Start();
 }
 //**********************************************************************
 
@@ -252,7 +266,7 @@ void CipherGlot_main(void) {
 	TIM4->CNT = 0;
 	HAL_TIM_Base_Start(&htim4);
 	do {  // Compare
-		sprintf(DataChar," %X", cipher_arr_u8[current_cipher_number_u32]);	// hint current Cipher
+		sprintf(DataChar," %X", (int)cipher_arr_u8[current_cipher_number_u32]);	// hint current Cipher
 		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 		if ( KeyPressed() == cipher_arr_u8[current_cipher_number_u32]) {
@@ -650,36 +664,46 @@ void Test_Segment(void) {
 	Segment_F(0);
 	Segment_E(0);
 
-	Segment_A(1);
-	HAL_Delay(500);
-	Segment_A(0);
+	#define SEGMENT_SHOW_MS	200
 
+	Beeper(11);
 	Segment_B(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_B(0);
 
+	Beeper(11);
 	Segment_C(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_C(0);
 
-	Segment_D(1);
-	HAL_Delay(500);
-	Segment_D(0);
-
+	Beeper(11);
 	Segment_E(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_E(0);
 
+	Beeper(11);
 	Segment_F(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_F(0);
 
+	Beeper(11);
+	Segment_A(1);
+	HAL_Delay(SEGMENT_SHOW_MS);
+	Segment_A(0);
+
+	Beeper(11);
 	Segment_G(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_G(0);
 
+	Beeper(11);
+	Segment_D(1);
+	HAL_Delay(SEGMENT_SHOW_MS);
+	Segment_D(0);
+
+	Beeper(11);
 	Segment_P(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_P(0);
 }
 //**********************************************************************
@@ -976,28 +1000,56 @@ void CipherPrint (uint8_t num) {
 		Segment_D(1);
 				Segment_P(0);
 		}
+
+	if (num==0x27) {		// "U"
+		Segment_A(0);
+	Segment_F(1);Segment_B(1);
+		Segment_G(0);
+	Segment_E(1);Segment_C(1);
+		Segment_D(1);
+				Segment_P(0);
+		}
 }
 //**********************************************************************
 
 uint8_t TestLED(void) {
 	uint8_t start_key_u8 = 0;
 
-	CipherPrint(0x10);
 	Beeper(12);
+	Beeper(11);
 	start_key_u8 = KeyPressed();
 	Beeper(11);
 	srand(start_key_u8);
 	CipherPrint(start_key_u8);
 	HAL_Delay(500);
-	for (uint32_t i=0; i<=start_key_u8 ; i++) {
-		Beeper(11);
-		CipherPrint(i);
-		HAL_Delay(300);
+
+	if (start_key_u8 != 1) {
+		for (uint32_t i=0; i<=start_key_u8 ; i++) {
+			Beeper(11);
+			CipherPrint(i);
+			HAL_Delay(300);
+		}
 	}
+
 	CipherPrint(0x11); // blank
 	rand(); // проcто так
 	HAL_Delay(1000);
 	return start_key_u8;
+}
+//**********************************************************************
+
+void PrintSoftVersion(int *_soft_version_arr_int) {
+	HAL_Delay(1000);
+	Beeper(12);
+	Beeper(11);
+	HAL_Delay(500);
+	for (uint32_t i=0; i<3 ; i++) {
+		Beeper(11);
+		CipherPrint(_soft_version_arr_int[i]);
+		HAL_Delay(300);
+	}
+	CipherPrint(0x11); // blank
+	HAL_Delay(1000);
 }
 //**********************************************************************
 
@@ -1107,3 +1159,8 @@ void BlankIndicatorStop (void) {
 	HAL_TIM_Base_Stop_IT(&htim3); // start TIM3 interupt
 }
 //**********************************************************************
+
+void Prompt_Start(void) {
+	HAL_TIM_Base_Start_IT(&htim4); // start TIM4 prompt
+}
+
