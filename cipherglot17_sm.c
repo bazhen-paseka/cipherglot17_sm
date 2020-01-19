@@ -535,31 +535,31 @@ uint8_t ScanKeyBoard(void) {
 		keyboard_u8 = 0xFF;
 
 		ScanRow_123A(1);
-		if (GPIOB->IDR & GPIO_IDR_IDR5) keyboard_u8 =0x01;
-		if (GPIOB->IDR & GPIO_IDR_IDR3) keyboard_u8 =0x02;
-		if (GPIOB->IDR & GPIO_IDR_IDR4) keyboard_u8 =0x03;
-		if (GPIOB->IDR & GPIO_IDR_IDR8) keyboard_u8 =0x0A;
+		if (KEYBOARD_COLUMN_1_GPIO_Port->IDR & KEYBOARD_COLUMN_1_IDR) keyboard_u8 =0x01;
+		if (KEYBOARD_COLUMN_2_GPIO_Port->IDR & KEYBOARD_COLUMN_2_IDR) keyboard_u8 =0x02;
+		if (KEYBOARD_COLUMN_3_GPIO_Port->IDR & KEYBOARD_COLUMN_3_IDR) keyboard_u8 =0x03;
+		if (KEYBOARD_COLUMN_A_GPIO_Port->IDR & KEYBOARD_COLUMN_A_IDR) keyboard_u8 =0x0A;
 		ScanRow_123A(0);
 
 		ScanRow_456B(1);
-		if (GPIOB->IDR & GPIO_IDR_IDR5) keyboard_u8 =0x04;
-		if (GPIOB->IDR & GPIO_IDR_IDR3) keyboard_u8 =0x05;
-		if (GPIOB->IDR & GPIO_IDR_IDR4) keyboard_u8 =0x06;
-		if (GPIOB->IDR & GPIO_IDR_IDR8) keyboard_u8 =0x0B;
+		if (KEYBOARD_COLUMN_1_GPIO_Port->IDR & KEYBOARD_COLUMN_1_IDR) keyboard_u8 =0x04;
+		if (KEYBOARD_COLUMN_2_GPIO_Port->IDR & KEYBOARD_COLUMN_2_IDR) keyboard_u8 =0x05;
+		if (KEYBOARD_COLUMN_3_GPIO_Port->IDR & KEYBOARD_COLUMN_3_IDR) keyboard_u8 =0x06;
+		if (KEYBOARD_COLUMN_A_GPIO_Port->IDR & KEYBOARD_COLUMN_A_IDR) keyboard_u8 =0x0B;
 		ScanRow_456B(0);
 
 		ScanRow_789C(1);
-		if (GPIOB->IDR & GPIO_IDR_IDR5) keyboard_u8 =0x07;
-		if (GPIOB->IDR & GPIO_IDR_IDR3) keyboard_u8 =0x08;
-		if (GPIOB->IDR & GPIO_IDR_IDR4) keyboard_u8 =0x09;
-		if (GPIOB->IDR & GPIO_IDR_IDR8) keyboard_u8 =0x0C;
+		if (KEYBOARD_COLUMN_1_GPIO_Port->IDR & KEYBOARD_COLUMN_1_IDR) keyboard_u8 =0x07;
+		if (KEYBOARD_COLUMN_2_GPIO_Port->IDR & KEYBOARD_COLUMN_2_IDR) keyboard_u8 =0x08;
+		if (KEYBOARD_COLUMN_3_GPIO_Port->IDR & KEYBOARD_COLUMN_3_IDR) keyboard_u8 =0x09;
+		if (KEYBOARD_COLUMN_A_GPIO_Port->IDR & KEYBOARD_COLUMN_A_IDR) keyboard_u8 =0x0C;
 		ScanRow_789C(0);
 
 		ScanRow_E0FD(1);
-		if (GPIOB->IDR & GPIO_IDR_IDR5) keyboard_u8 =0x0E;
-		if (GPIOB->IDR & GPIO_IDR_IDR3) keyboard_u8 =0x00;
-		if (GPIOB->IDR & GPIO_IDR_IDR4) keyboard_u8 =0x0F;
-		if (GPIOB->IDR & GPIO_IDR_IDR8) keyboard_u8 =0x0D;
+		if (KEYBOARD_COLUMN_1_GPIO_Port->IDR & KEYBOARD_COLUMN_1_IDR) keyboard_u8 =0x0E;
+		if (KEYBOARD_COLUMN_2_GPIO_Port->IDR & KEYBOARD_COLUMN_2_IDR) keyboard_u8 =0x00;
+		if (KEYBOARD_COLUMN_3_GPIO_Port->IDR & KEYBOARD_COLUMN_3_IDR) keyboard_u8 =0x0F;
+		if (KEYBOARD_COLUMN_A_GPIO_Port->IDR & KEYBOARD_COLUMN_A_IDR) keyboard_u8 =0x0D;
 		ScanRow_E0FD(0);
 		}
 	while (keyboard_u8 == 0xFF);
@@ -617,26 +617,26 @@ void Segment_P(uint8_t _status) {
 
 
 void ScanRow_123A(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8,  RESET);
-	else			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8,    SET);
+	if (status == 0) HAL_GPIO_WritePin(KEYBOARD_ROW_123A_GPIO_Port, KEYBOARD_ROW_123A_Pin,  RESET);
+	else			 HAL_GPIO_WritePin(KEYBOARD_ROW_123A_GPIO_Port, KEYBOARD_ROW_123A_Pin,    SET);
 }
 //****************************
 
 void ScanRow_456B(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9,  RESET);
-	else			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9,    SET);
+	if (status == 0) HAL_GPIO_WritePin(KEYBOARD_ROW_456B_GPIO_Port, KEYBOARD_ROW_456B_Pin,  RESET);
+	else			 HAL_GPIO_WritePin(KEYBOARD_ROW_456B_GPIO_Port, KEYBOARD_ROW_456B_Pin,    SET);
 }
 //****************************
 
 void ScanRow_789C(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10,  RESET);
-	else			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10,    SET);
+	if (status == 0) HAL_GPIO_WritePin(KEYBOARD_ROW_789C_GPIO_Port, KEYBOARD_ROW_789C_Pin,  RESET);
+	else			 HAL_GPIO_WritePin(KEYBOARD_ROW_789C_GPIO_Port, KEYBOARD_ROW_789C_Pin,    SET);
 }
 //****************************
 
 void ScanRow_E0FD(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11,  RESET);
-	else			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11,    SET);
+	if (status == 0) HAL_GPIO_WritePin(KEYBOARD_ROW_E0FD_GPIO_Port, KEYBOARD_ROW_E0FD_Pin,  RESET);
+	else			 HAL_GPIO_WritePin(KEYBOARD_ROW_E0FD_GPIO_Port, KEYBOARD_ROW_E0FD_Pin,    SET);
 }
 //**********************************************************************
 
