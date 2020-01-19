@@ -567,51 +567,51 @@ uint8_t ScanKeyBoard(void) {
 }
 //**********************************************************************
 
-void Segment_A(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4,   SET);
-	else             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, RESET);
+void Segment_A(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_A_GPIO_Port, LED_SEGMENT_A_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_A_GPIO_Port, LED_SEGMENT_A_Pin, RESET);
 }
 //****************************
 
-void Segment_B(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1,   SET);
-	else         	 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, RESET);
+void Segment_B(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_B_GPIO_Port, LED_SEGMENT_B_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_B_GPIO_Port, LED_SEGMENT_B_Pin, RESET);
 }
 //****************************
 
-void Segment_C(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15,   SET);
-	else      		 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15, RESET);
+void Segment_C(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_C_GPIO_Port, LED_SEGMENT_C_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_C_GPIO_Port, LED_SEGMENT_C_Pin, RESET);
 }
 //****************************
 
-void Segment_D(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2,   SET);
-	else      		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, RESET);
+void Segment_D(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_D_GPIO_Port, LED_SEGMENT_D_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_D_GPIO_Port, LED_SEGMENT_D_Pin, RESET);
 }
 //****************************
 
-void Segment_E(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3,   SET);
-	else             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, RESET);
+void Segment_E(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_E_GPIO_Port, LED_SEGMENT_E_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_E_GPIO_Port, LED_SEGMENT_E_Pin, RESET);
 }
 //****************************
 
-void Segment_F(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6,   SET);
-	else             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, RESET);
+void Segment_F(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_F_GPIO_Port, LED_SEGMENT_F_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_F_GPIO_Port, LED_SEGMENT_F_Pin, RESET);
 }
 //****************************
 
-void Segment_G(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7,   SET);
-	else             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, RESET);
+void Segment_G(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_G_GPIO_Port, LED_SEGMENT_G_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_G_GPIO_Port, LED_SEGMENT_G_Pin, RESET);
 }
 //****************************
 
-void Segment_P(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14,   SET);
-	else         	 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, RESET);
+void Segment_P(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_P_GPIO_Port, LED_SEGMENT_P_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_P_GPIO_Port, LED_SEGMENT_P_Pin, RESET);
 }
 //**********************************************************************
 
