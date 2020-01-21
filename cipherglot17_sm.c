@@ -1,4 +1,6 @@
-#define SOFT_VERSION 	171
+#define SOFT_VERSION 	161
+// switch to DAC
+// generate a new number of the nearest environment
 
 	// TIM2 Sound on port PA1
 	// TIM3 timer LED Off = 2 sec
@@ -25,6 +27,10 @@
 	#include "cipherglot17_sm.h"
 	#include "ringbuffer_dma_sm.h"
 	#include "flash_stm32f103_hal_sm.h"
+
+	#include "stdio.h"
+	#include "average_calc_3_from_5.h"
+
 
 //**********************************************************************
 
@@ -122,8 +128,8 @@ void CipherGlot_init(void) {
 	soft_version_arr_int[1] = ((SOFT_VERSION) /  10) %10 ;
 	soft_version_arr_int[2] = ((SOFT_VERSION)      ) %10 ;
 
-	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-19 v%d.%d.%d Migrate CubeMX\r\nUART1 for debug started on speed 38400\r\n",
-			soft_version_arr_int[0],soft_version_arr_int[2],soft_version_arr_int[2]);
+	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-21 v%d.%d.%d bubble sort\r\nUART1 for debug started on speed 115200\r\n",
+			soft_version_arr_int[0],soft_version_arr_int[1],soft_version_arr_int[2]);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	sprintf(DataChar,"Press:\r\n 1 - load previous;\r\n 3 - load Pi;\r\n any key - start new.\r\n");
@@ -139,6 +145,10 @@ void CipherGlot_init(void) {
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 			uint32_t flash_value_u32;
+			uint32_t statistics_of_cipher_arr_u32[10];
+			for (int i=0; i<10; i++) {
+				statistics_of_cipher_arr_u32[i] = 0;
+			}
 
 			flash_value_u32 = Flash_Read(MY_FLASH_PAGE_ADDR);
 			start_cipher_number_u32 = (flash_value_u32 & 0x0000ffff)       ;
@@ -171,7 +181,7 @@ void CipherGlot_init(void) {
 						if ((flash_addr_u32 * 4 + i) <= total_cipher_number_u32) {
 							sprintf(DataChar,"%X", cipher_arr_u8[flash_addr_u32 * 4 + i] );
 							HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-
+							statistics_of_cipher_arr_u32[cipher_arr_u8[flash_addr_u32 * 4 + i]]++;
 							if (i == 4) {
 								sprintf(DataChar,"; \t\t");
 								HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -185,18 +195,42 @@ void CipherGlot_init(void) {
 					}
 				}
 			}
+
+			sprintf(DataChar,"Statistics_of_cipher:\r\n" );
+			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+			for (int i=0; i<10; i++) {
+				sprintf(DataChar," %d)%d \t\r\n", i, (int)statistics_of_cipher_arr_u32[i] );
+				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+			}
+
+			//sort^
+			uint32_t arr_for_sort_stat[10];
+			for (int i=0; i<10; i++) {
+				arr_for_sort_stat[i] = statistics_of_cipher_arr_u32[i];
+			}
+			Bubble_sort(arr_for_sort_stat, 10);
+
+			sprintf(DataChar,"Bubble_sorted \t\r\n" );
+			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+			for (int i=0; i<10; i++) {
+				sprintf(DataChar," %d(%d ;\r\n", i, (int)arr_for_sort_stat[i] );
+				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+			}
+
+			//
+
 			sprintf(DataChar,"\r\n-> Finish read from flash.\r\n\r\n");
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 			current_cipher_number_u32 = start_cipher_number_u32;
-		}
-		break;
+		} break;
 
 		case 3: {
 			start_cipher_number_u32 = 0;	// use 'Pi'
 			total_cipher_number_u32   = start_cipher_number_u32 ;
 			current_cipher_number_u32 = start_cipher_number_u32 ;
-		}
-		break;
+		} break;
 
 		default: {
 		  start_cipher_number_u32 = 5 ;
@@ -212,8 +246,8 @@ void CipherGlot_init(void) {
 
 		total_cipher_number_u32   = start_cipher_number_u32 ;
 		current_cipher_number_u32 = start_cipher_number_u32 ;
-		} // default
-		break;
+		} break; // default
+
 	}
 
 	sprintf(DataChar,"Init - Ok\r\n");
