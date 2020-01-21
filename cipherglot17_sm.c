@@ -1,3 +1,7 @@
+#define SOFT_VERSION 	161
+// switch to DAC
+// generate a new number of the nearest environment
+
 	// TIM2 Sound on port PA1
 	// TIM3 timer LED Off = 2 sec
 	// TIM4 prompt current cipher
@@ -23,6 +27,10 @@
 	#include "cipherglot17_sm.h"
 	#include "ringbuffer_dma_sm.h"
 	#include "flash_stm32f103_hal_sm.h"
+
+	#include "stdio.h"
+	#include "average_calc_3_from_5.h"
+
 
 //**********************************************************************
 
@@ -85,6 +93,8 @@ void CipherPrint (uint8_t);
 void BeepCipher_OK(uint8_t _cipher);
 void BeepCipherError(uint32_t, uint32_t, uint32_t, uint8_t, uint8_t, uint8_t);
 void Beeper (uint8_t);
+void Beeper_11(void);
+void Beeper_12(void);
 void BeepError2 (void);
 void BeepError3 (void);
 void TheEnd (void);
@@ -97,6 +107,10 @@ uint8_t ScanKeyBoard (void);
 uint8_t KeyPressed (void);
 uint8_t TestLED (void);
 uint8_t Prompt_Status (void);
+
+void PrintSoftVersion(int *_soft_version_arr_int);
+void Prompt_Start(void);
+
 //**********************************************************************
 
 void CipherGlot_init(void) {
@@ -109,13 +123,20 @@ void CipherGlot_init(void) {
 	//HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
 	BlankIndicatorStart();
 
-	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-19 v1.6.0 Migrate CubeMX\r\nUART1 for debug started on speed 38400\r\n");
+	int soft_version_arr_int[3];
+	soft_version_arr_int[0] = ((SOFT_VERSION) / 100)     ;
+	soft_version_arr_int[1] = ((SOFT_VERSION) /  10) %10 ;
+	soft_version_arr_int[2] = ((SOFT_VERSION)      ) %10 ;
+
+	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-21 v%d.%d.%d bubble sort\r\nUART1 for debug started on speed 115200\r\n",
+			soft_version_arr_int[0],soft_version_arr_int[1],soft_version_arr_int[2]);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	sprintf(DataChar,"Press:\r\n 1 - load previous;\r\n 3 - load Pi;\r\n any key - start new.\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	// Test_Segment();
+	Test_Segment();
+	PrintSoftVersion(soft_version_arr_int);
 	game_type_u8 = TestLED();
 
 	switch (game_type_u8) {
@@ -124,6 +145,10 @@ void CipherGlot_init(void) {
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 			uint32_t flash_value_u32;
+			uint32_t statistics_of_cipher_arr_u32[10];
+			for (int i=0; i<10; i++) {
+				statistics_of_cipher_arr_u32[i] = 0;
+			}
 
 			flash_value_u32 = Flash_Read(MY_FLASH_PAGE_ADDR);
 			start_cipher_number_u32 = (flash_value_u32 & 0x0000ffff)       ;
@@ -156,7 +181,7 @@ void CipherGlot_init(void) {
 						if ((flash_addr_u32 * 4 + i) <= total_cipher_number_u32) {
 							sprintf(DataChar,"%X", cipher_arr_u8[flash_addr_u32 * 4 + i] );
 							HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-
+							statistics_of_cipher_arr_u32[cipher_arr_u8[flash_addr_u32 * 4 + i]]++;
 							if (i == 4) {
 								sprintf(DataChar,"; \t\t");
 								HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -170,18 +195,42 @@ void CipherGlot_init(void) {
 					}
 				}
 			}
+
+			sprintf(DataChar,"Statistics_of_cipher:\r\n" );
+			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+			for (int i=0; i<10; i++) {
+				sprintf(DataChar," %d)%d \t\r\n", i, (int)statistics_of_cipher_arr_u32[i] );
+				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+			}
+
+			//sort^
+			uint32_t arr_for_sort_stat[10];
+			for (int i=0; i<10; i++) {
+				arr_for_sort_stat[i] = statistics_of_cipher_arr_u32[i];
+			}
+			Bubble_sort(arr_for_sort_stat, 10);
+
+			sprintf(DataChar,"Bubble_sorted \t\r\n" );
+			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+			for (int i=0; i<10; i++) {
+				sprintf(DataChar," %d(%d ;\r\n", i, (int)arr_for_sort_stat[i] );
+				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+			}
+
+			//
+
 			sprintf(DataChar,"\r\n-> Finish read from flash.\r\n\r\n");
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 			current_cipher_number_u32 = start_cipher_number_u32;
-		}
-		break;
+		} break;
 
 		case 3: {
 			start_cipher_number_u32 = 0;	// use 'Pi'
 			total_cipher_number_u32   = start_cipher_number_u32 ;
 			current_cipher_number_u32 = start_cipher_number_u32 ;
-		}
-		break;
+		} break;
 
 		default: {
 		  start_cipher_number_u32 = 5 ;
@@ -197,14 +246,15 @@ void CipherGlot_init(void) {
 
 		total_cipher_number_u32   = start_cipher_number_u32 ;
 		current_cipher_number_u32 = start_cipher_number_u32 ;
-		} // default
-		break;
+		} break; // default
+
 	}
 
 	sprintf(DataChar,"Init - Ok\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	HAL_TIM_Base_Start_IT(&htim4); // start TIM4 prompt
+	//	HAL_TIM_Base_Start_IT(&htim4); // start TIM4 prompt
+	Prompt_Start();
 }
 //**********************************************************************
 
@@ -221,25 +271,25 @@ void CipherGlot_main(void) {
 	if ((game_type_u8 == 3) && (total_cipher_number_u32 == start_cipher_number_u32) ) {
 		uint8_t start_numb_arr_u8[3]  = {0,0,0} ;
 
-		Beeper(11);
+		Beeper_11();
 		CipherPrint(0x11);
 		Segment_A(1);
 		start_numb_arr_u8[0] = KeyPressed();
-		Beeper(12);
+		Beeper_12();
 		CipherPrint(start_numb_arr_u8[0]);
 		HAL_Delay(500);
 
 		CipherPrint(0x11);
 		Segment_G(1);
 		start_numb_arr_u8[1] = KeyPressed();
-		Beeper(12);
+		Beeper_12();
 		CipherPrint(start_numb_arr_u8[1]);
 		HAL_Delay(500);
 
 		CipherPrint(0x11);
 		Segment_D(1);
 		start_numb_arr_u8[2] = KeyPressed();
-		Beeper(12);
+		Beeper_12();
 		CipherPrint(start_numb_arr_u8[2]);
 		HAL_Delay(300);
 		total_cipher_number_u32 = 100*start_numb_arr_u8[0] + 10*start_numb_arr_u8[1] + start_numb_arr_u8[2];
@@ -252,7 +302,7 @@ void CipherGlot_main(void) {
 	TIM4->CNT = 0;
 	HAL_TIM_Base_Start(&htim4);
 	do {  // Compare
-		sprintf(DataChar," %X", cipher_arr_u8[current_cipher_number_u32]);	// hint current Cipher
+		sprintf(DataChar," %X", (int)cipher_arr_u8[current_cipher_number_u32]);	// hint current Cipher
 		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 		if ( KeyPressed() == cipher_arr_u8[current_cipher_number_u32]) {
@@ -297,7 +347,7 @@ void CipherGlot_main(void) {
 				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 				if (KeyPressed() == 0x0F) {
-					Beeper(11);
+					Beeper_11();
 					CipherPrint(0x11);
 					HAL_Delay(300);
 					CipherPrint(0x0F);
@@ -334,7 +384,7 @@ void CipherGlot_main(void) {
 					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 				}
 				else {
-					Beeper(11);
+					Beeper_11();
 					CipherPrint(0x15);
 					sprintf(DataChar,"-- NO write to Flash --\r\n");
 					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -369,18 +419,18 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 
 	//  COUT Current Number
 		//	KeyPressed();
-		//	Beeper(12);					HAL_Delay(300);
+		//	Beeper_12();					HAL_Delay(300);
 		//
-		//	Beeper(11);
+		//	Beeper_11();
 		//	CipherPrint(CurNumb/100);	HAL_Delay(500);
 		//	CipherPrint(0x11);			HAL_Delay(100);
 		//
-		//	Beeper(11);
+		//	Beeper_11();
 		//	CurNumb = CurNumb%100;
 		//	CipherPrint(CurNumb/10);	HAL_Delay(500);
 		//	CipherPrint(0x11);			HAL_Delay(100);
 		//
-		//	Beeper(11);
+		//	Beeper_11();
 		//	CurNumb = CurNumb%10;
 		//	CipherPrint(CurNumb);		HAL_Delay(500);
 		//	CipherPrint(0x11);			HAL_Delay(500);
@@ -392,23 +442,23 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	KeyPressed();
-	//Beeper(12);					HAL_Delay(300);
-	Beeper(12);						HAL_Delay(300);
+	//Beeper_12();					HAL_Delay(300);
+	Beeper_12();						HAL_Delay(300);
 
 	MaxNumb = MaxNumb - StartNumb;
 
 	sprintf(DataChar,"Total cipher numb: %d\r\n", (int)MaxNumb);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint(MaxNumb/100);		HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(100);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint((MaxNumb%100)/10);	HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(100);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint(MaxNumb%10);		HAL_Delay(500);
 
 	CipherPrint(0x26);				HAL_Delay(500);	// 't'
@@ -422,19 +472,19 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 	sprintf(DataChar,"Time %d:%02d:%02d\r\n", (int)_StopHour_u8, (int)_StopMin_u8, (int)_StopSec_u8);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	//Beeper(12);					HAL_Delay(300);
-	Beeper(12);						HAL_Delay(300);
-	Beeper(12);						HAL_Delay(300);
+	//Beeper_12();					HAL_Delay(300);
+	Beeper_12();						HAL_Delay(300);
+	Beeper_12();						HAL_Delay(300);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint(_StopHour_u8 % 10);	HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(100);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint(_StopMin_u8 / 10);	HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(100);
 
-	Beeper(11);
+	Beeper_11();
 	CipherPrint(_StopMin_u8 % 10);	HAL_Delay(500);
 
 	CipherPrint(0x0E);
@@ -444,21 +494,21 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 
 	if (KeyPressed() == 0x0E) {
 		CipherPrint(0x0E);
-		Beeper(11);
+		Beeper_11();
 		char http_req[200];
 		sprintf(http_req, "&field8=%d\r\n\r\n", (int)MaxNumb );
 		RingBuffer_DMA_Connect();
 		CipherPrint(0x11);
-		Beeper(11);
+		Beeper_11();
 		CipherPrint(0x0E);
 
 		RingBuffer_DMA_Main(http_req);
-		Beeper(11);
+		Beeper_11();
 		CipherPrint(0x11);
 		//HAL_Delay(1000);
 	}
 	else {
-		Beeper(11);
+		Beeper_11();
 		CipherPrint(0x24);
 		sprintf(DataChar,"-- NO send to ThingSpeak --\r\n");
 		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -466,7 +516,7 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 	}
 	BlankIndicatorStart();
 //	KeyPressed();
-//	Beeper(11);
+//	Beeper_11();
 //	HAL_Delay(1000);
 }
 //**********************************************************************
@@ -535,31 +585,31 @@ uint8_t ScanKeyBoard(void) {
 		keyboard_u8 = 0xFF;
 
 		ScanRow_123A(1);
-		if (GPIOB->IDR & GPIO_IDR_IDR5) keyboard_u8 =0x01;
-		if (GPIOB->IDR & GPIO_IDR_IDR3) keyboard_u8 =0x02;
-		if (GPIOB->IDR & GPIO_IDR_IDR4) keyboard_u8 =0x03;
-		if (GPIOB->IDR & GPIO_IDR_IDR8) keyboard_u8 =0x0A;
+		if (KEYBOARD_COLUMN_1_GPIO_Port->IDR & KEYBOARD_COLUMN_1_IDR) keyboard_u8 =0x01;
+		if (KEYBOARD_COLUMN_2_GPIO_Port->IDR & KEYBOARD_COLUMN_2_IDR) keyboard_u8 =0x02;
+		if (KEYBOARD_COLUMN_3_GPIO_Port->IDR & KEYBOARD_COLUMN_3_IDR) keyboard_u8 =0x03;
+		if (KEYBOARD_COLUMN_A_GPIO_Port->IDR & KEYBOARD_COLUMN_A_IDR) keyboard_u8 =0x0A;
 		ScanRow_123A(0);
 
 		ScanRow_456B(1);
-		if (GPIOB->IDR & GPIO_IDR_IDR5) keyboard_u8 =0x04;
-		if (GPIOB->IDR & GPIO_IDR_IDR3) keyboard_u8 =0x05;
-		if (GPIOB->IDR & GPIO_IDR_IDR4) keyboard_u8 =0x06;
-		if (GPIOB->IDR & GPIO_IDR_IDR8) keyboard_u8 =0x0B;
+		if (KEYBOARD_COLUMN_1_GPIO_Port->IDR & KEYBOARD_COLUMN_1_IDR) keyboard_u8 =0x04;
+		if (KEYBOARD_COLUMN_2_GPIO_Port->IDR & KEYBOARD_COLUMN_2_IDR) keyboard_u8 =0x05;
+		if (KEYBOARD_COLUMN_3_GPIO_Port->IDR & KEYBOARD_COLUMN_3_IDR) keyboard_u8 =0x06;
+		if (KEYBOARD_COLUMN_A_GPIO_Port->IDR & KEYBOARD_COLUMN_A_IDR) keyboard_u8 =0x0B;
 		ScanRow_456B(0);
 
 		ScanRow_789C(1);
-		if (GPIOB->IDR & GPIO_IDR_IDR5) keyboard_u8 =0x07;
-		if (GPIOB->IDR & GPIO_IDR_IDR3) keyboard_u8 =0x08;
-		if (GPIOB->IDR & GPIO_IDR_IDR4) keyboard_u8 =0x09;
-		if (GPIOB->IDR & GPIO_IDR_IDR8) keyboard_u8 =0x0C;
+		if (KEYBOARD_COLUMN_1_GPIO_Port->IDR & KEYBOARD_COLUMN_1_IDR) keyboard_u8 =0x07;
+		if (KEYBOARD_COLUMN_2_GPIO_Port->IDR & KEYBOARD_COLUMN_2_IDR) keyboard_u8 =0x08;
+		if (KEYBOARD_COLUMN_3_GPIO_Port->IDR & KEYBOARD_COLUMN_3_IDR) keyboard_u8 =0x09;
+		if (KEYBOARD_COLUMN_A_GPIO_Port->IDR & KEYBOARD_COLUMN_A_IDR) keyboard_u8 =0x0C;
 		ScanRow_789C(0);
 
 		ScanRow_E0FD(1);
-		if (GPIOB->IDR & GPIO_IDR_IDR5) keyboard_u8 =0x0E;
-		if (GPIOB->IDR & GPIO_IDR_IDR3) keyboard_u8 =0x00;
-		if (GPIOB->IDR & GPIO_IDR_IDR4) keyboard_u8 =0x0F;
-		if (GPIOB->IDR & GPIO_IDR_IDR8) keyboard_u8 =0x0D;
+		if (KEYBOARD_COLUMN_1_GPIO_Port->IDR & KEYBOARD_COLUMN_1_IDR) keyboard_u8 =0x0E;
+		if (KEYBOARD_COLUMN_2_GPIO_Port->IDR & KEYBOARD_COLUMN_2_IDR) keyboard_u8 =0x00;
+		if (KEYBOARD_COLUMN_3_GPIO_Port->IDR & KEYBOARD_COLUMN_3_IDR) keyboard_u8 =0x0F;
+		if (KEYBOARD_COLUMN_A_GPIO_Port->IDR & KEYBOARD_COLUMN_A_IDR) keyboard_u8 =0x0D;
 		ScanRow_E0FD(0);
 		}
 	while (keyboard_u8 == 0xFF);
@@ -567,76 +617,76 @@ uint8_t ScanKeyBoard(void) {
 }
 //**********************************************************************
 
-void Segment_A(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4,   SET);
-	else             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, RESET);
+void Segment_A(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_A_GPIO_Port, LED_SEGMENT_A_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_A_GPIO_Port, LED_SEGMENT_A_Pin, RESET);
 }
 //****************************
 
-void Segment_B(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1,   SET);
-	else         	 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, RESET);
+void Segment_B(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_B_GPIO_Port, LED_SEGMENT_B_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_B_GPIO_Port, LED_SEGMENT_B_Pin, RESET);
 }
 //****************************
 
-void Segment_C(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15,   SET);
-	else      		 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15, RESET);
+void Segment_C(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_C_GPIO_Port, LED_SEGMENT_C_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_C_GPIO_Port, LED_SEGMENT_C_Pin, RESET);
 }
 //****************************
 
-void Segment_D(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2,   SET);
-	else      		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, RESET);
+void Segment_D(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_D_GPIO_Port, LED_SEGMENT_D_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_D_GPIO_Port, LED_SEGMENT_D_Pin, RESET);
 }
 //****************************
 
-void Segment_E(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3,   SET);
-	else             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, RESET);
+void Segment_E(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_E_GPIO_Port, LED_SEGMENT_E_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_E_GPIO_Port, LED_SEGMENT_E_Pin, RESET);
 }
 //****************************
 
-void Segment_F(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6,   SET);
-	else             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, RESET);
+void Segment_F(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_F_GPIO_Port, LED_SEGMENT_F_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_F_GPIO_Port, LED_SEGMENT_F_Pin, RESET);
 }
 //****************************
 
-void Segment_G(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7,   SET);
-	else             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, RESET);
+void Segment_G(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_G_GPIO_Port, LED_SEGMENT_G_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_G_GPIO_Port, LED_SEGMENT_G_Pin, RESET);
 }
 //****************************
 
-void Segment_P(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14,   SET);
-	else         	 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, RESET);
+void Segment_P(uint8_t _status) {
+	if (_status == 0) HAL_GPIO_WritePin(LED_SEGMENT_P_GPIO_Port, LED_SEGMENT_P_Pin,   SET);
+	else              HAL_GPIO_WritePin(LED_SEGMENT_P_GPIO_Port, LED_SEGMENT_P_Pin, RESET);
 }
 //**********************************************************************
 
 
 void ScanRow_123A(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8,  RESET);
-	else			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8,    SET);
+	if (status == 0) HAL_GPIO_WritePin(KEYBOARD_ROW_123A_GPIO_Port, KEYBOARD_ROW_123A_Pin,  RESET);
+	else			 HAL_GPIO_WritePin(KEYBOARD_ROW_123A_GPIO_Port, KEYBOARD_ROW_123A_Pin,    SET);
 }
 //****************************
 
 void ScanRow_456B(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9,  RESET);
-	else			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9,    SET);
+	if (status == 0) HAL_GPIO_WritePin(KEYBOARD_ROW_456B_GPIO_Port, KEYBOARD_ROW_456B_Pin,  RESET);
+	else			 HAL_GPIO_WritePin(KEYBOARD_ROW_456B_GPIO_Port, KEYBOARD_ROW_456B_Pin,    SET);
 }
 //****************************
 
 void ScanRow_789C(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10,  RESET);
-	else			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10,    SET);
+	if (status == 0) HAL_GPIO_WritePin(KEYBOARD_ROW_789C_GPIO_Port, KEYBOARD_ROW_789C_Pin,  RESET);
+	else			 HAL_GPIO_WritePin(KEYBOARD_ROW_789C_GPIO_Port, KEYBOARD_ROW_789C_Pin,    SET);
 }
 //****************************
 
 void ScanRow_E0FD(uint8_t status) {
-	if (status == 0) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11,  RESET);
-	else			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11,    SET);
+	if (status == 0) HAL_GPIO_WritePin(KEYBOARD_ROW_E0FD_GPIO_Port, KEYBOARD_ROW_E0FD_Pin,  RESET);
+	else			 HAL_GPIO_WritePin(KEYBOARD_ROW_E0FD_GPIO_Port, KEYBOARD_ROW_E0FD_Pin,    SET);
 }
 //**********************************************************************
 
@@ -650,36 +700,46 @@ void Test_Segment(void) {
 	Segment_F(0);
 	Segment_E(0);
 
-	Segment_A(1);
-	HAL_Delay(500);
-	Segment_A(0);
+	#define SEGMENT_SHOW_MS	200
 
+	Beeper_11();
 	Segment_B(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_B(0);
 
+	Beeper_11();
 	Segment_C(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_C(0);
 
-	Segment_D(1);
-	HAL_Delay(500);
-	Segment_D(0);
-
+	Beeper_11();
 	Segment_E(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_E(0);
 
+	Beeper_11();
 	Segment_F(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_F(0);
 
+	Beeper_11();
+	Segment_A(1);
+	HAL_Delay(SEGMENT_SHOW_MS);
+	Segment_A(0);
+
+	Beeper_11();
 	Segment_G(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_G(0);
 
+	Beeper_11();
+	Segment_D(1);
+	HAL_Delay(SEGMENT_SHOW_MS);
+	Segment_D(0);
+
+	Beeper_11();
 	Segment_P(1);
-	HAL_Delay(500);
+	HAL_Delay(SEGMENT_SHOW_MS);
 	Segment_P(0);
 }
 //**********************************************************************
@@ -976,28 +1036,57 @@ void CipherPrint (uint8_t num) {
 		Segment_D(1);
 				Segment_P(0);
 		}
+
+	if (num==0x27) {		// "U"
+		Segment_A(0);
+	Segment_F(1);Segment_B(1);
+		Segment_G(0);
+	Segment_E(1);Segment_C(1);
+		Segment_D(1);
+				Segment_P(0);
+		}
 }
 //**********************************************************************
 
 uint8_t TestLED(void) {
 	uint8_t start_key_u8 = 0;
 
-	CipherPrint(0x10);
-	Beeper(12);
+	CipherPrint(0x27);
+	Beeper_12();
+	Beeper_11();
 	start_key_u8 = KeyPressed();
-	Beeper(11);
+	Beeper_11();
 	srand(start_key_u8);
 	CipherPrint(start_key_u8);
 	HAL_Delay(500);
-	for (uint32_t i=0; i<=start_key_u8 ; i++) {
-		Beeper(11);
-		CipherPrint(i);
-		HAL_Delay(300);
+
+	if (start_key_u8 != 1) {
+		for (uint32_t i=0; i<=start_key_u8 ; i++) {
+			Beeper_11();
+			CipherPrint(i);
+			HAL_Delay(300);
+		}
 	}
+
 	CipherPrint(0x11); // blank
 	rand(); // проcто так
 	HAL_Delay(1000);
 	return start_key_u8;
+}
+//**********************************************************************
+
+void PrintSoftVersion(int *_soft_version_arr_int) {
+	HAL_Delay(1000);
+	Beeper_12();
+	Beeper_11();
+	HAL_Delay(500);
+	for (uint32_t i=0; i<3 ; i++) {
+		Beeper_11();
+		CipherPrint(_soft_version_arr_int[i]);
+		HAL_Delay(300);
+	}
+	CipherPrint(0x11); // blank
+	HAL_Delay(1000);
 }
 //**********************************************************************
 
@@ -1018,50 +1107,76 @@ uint8_t KeyPressed(void) {
 }
 //**********************************************************************
 
-void Beeper(uint8_t type) {
+void Beeper_12(void) {
 	TIM2->CNT = 0;
-//	if (type == 11) {
-//		TIM2->ARR  = 1000;
-//		TIM2->CCR1 =  500;
-//		HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
-//		HAL_Delay(20);
-//		HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-//	}
-	if (type >= 12) {
-		TIM2->ARR  = 2000;
-		TIM2->CCR1 = 1000;
-		HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
-		HAL_Delay(80);
-		HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-	} else if (type > 9) {
-		TIM2->ARR  = 1000;
-		TIM2->CCR1 =  500;
-		HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
-		HAL_Delay(20);
-		HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-	} else {
-		TIM2->ARR  = (uint32_t)(type + 5) * 150;
-		TIM2->CCR1 = (uint32_t)(type + 5) *  75;
-		HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
-		HAL_Delay(50);
-		HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-	}
+	TIM2->ARR  = 2000;
+	TIM2->CCR1 = 1000;
+	HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
+	HAL_Delay(80);
+	HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
+}
+//**********************************************************************
+
+void Beeper_11(void) {
+	TIM2->CNT = 0;
+	TIM2->ARR  = 1000;
+	TIM2->CCR1 =  500;
+	HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
+	HAL_Delay(20);
+	HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
+}
+//**********************************************************************
+
+void Beeper(uint8_t type) {
+	uint32_t nota_arr_u32[12];	//	arr = 2`000`000 / F;
+//	nota_arr_u32[ 0] = 7692;		//	260	do C4
+//	nota_arr_u32[ 1] = 6800;		//	294 re D4
+//	nota_arr_u32[ 2] = 6060;		//	330 me E4
+//	nota_arr_u32[ 3] = 5714;		//	350 fa F4
+//	nota_arr_u32[ 4] = 5128;		//	390 so G4
+//	nota_arr_u32[ 5] = 4544;		//	440 la A4
+//	nota_arr_u32[ 6] = 4048;		//	494 se B4
+//	nota_arr_u32[ 7] = 3816;		//	524 do C5
+//	nota_arr_u32[ 8] = 3400;		//	588 re D5
+//	nota_arr_u32[ 9] = 3030;		//	660 me E5
+//	nota_arr_u32[10] = 2856;		//	700 fa F5
+//	nota_arr_u32[11] = 2564;		//	780 so G5
+
+	nota_arr_u32[ 0] = 6804;		//	re	D4	294
+	nota_arr_u32[ 1] = 5732;		//	fa	F4	349
+	nota_arr_u32[ 2] = 4546;		//	la	A4	440
+	nota_arr_u32[ 3] = 3824;		//	do	C5	523
+	nota_arr_u32[ 4] = 3036;		//	me	E5	659
+	nota_arr_u32[ 5] = 2554;		//	so	G5	783
+	nota_arr_u32[ 6] = 2024;		//	se	B5	988
+	nota_arr_u32[ 7] = 1704;		//	re	D6	1174
+	nota_arr_u32[ 8] = 1433;		//	fa	F6	1396
+	nota_arr_u32[ 9] = 1136;		//	la	A6	1760
+	nota_arr_u32[10] =  956;		//	do	C7	2093
+	nota_arr_u32[11] =  758;		//	me	E7	2637
+
+	TIM2->CNT = 0;
+	TIM2->ARR  = (nota_arr_u32[type])      ;
+	TIM2->CCR1 = (nota_arr_u32[type]) >> 1 ;
+	HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
+	HAL_Delay(50);
+	HAL_TIM_PWM_Stop (&htim2,TIM_CHANNEL_1);
 }
 //**********************************************************************
 
 void TheEnd(void) {
-	Beeper(12);
-	Beeper(11);
-	Beeper(12);
+	Beeper_12();
+	Beeper_11();
+	Beeper_12();
 	CipherPrint(0x09);
 }
 //**********************************************************************
 
 void BeepCipher_OK(uint8_t _cipher) {
 	Beeper(_cipher);
-	CipherPrint(0x10); // point
+	//CipherPrint(0x10); // point
 	HAL_Delay(200);
-	CipherPrint(0x11); // blank
+	//CipherPrint(0x11); // blank
 }
 //**********************************************************************
 
@@ -1081,19 +1196,19 @@ void set_Blank(uint8_t new_blank_u8) {
 //**********************************************************************
 
 void BeepError2(void) {
-	Beeper(12);	CipherPrint(0x12);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x13);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x11);	HAL_Delay(500);
+	Beeper_12();	CipherPrint(0x12);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x13);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x11);	HAL_Delay(500);
 }
 //**********************************************************************
 
 void BeepError3(void) {
-	Beeper(12);	CipherPrint(0x12);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x13);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x12);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x13);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x12);	HAL_Delay(300);
-	Beeper(12);	CipherPrint(0x11);	HAL_Delay(1000);
+	Beeper_12();	CipherPrint(0x12);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x13);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x12);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x13);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x12);	HAL_Delay(300);
+	Beeper_12();	CipherPrint(0x11);	HAL_Delay(1000);
 	CipherPrint(0x10);
 }
 //**********************************************************************
@@ -1107,3 +1222,8 @@ void BlankIndicatorStop (void) {
 	HAL_TIM_Base_Stop_IT(&htim3); // start TIM3 interupt
 }
 //**********************************************************************
+
+void Prompt_Start(void) {
+	HAL_TIM_Base_Start_IT(&htim4); // start TIM4 prompt
+}
+
