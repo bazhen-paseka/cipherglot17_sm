@@ -1,4 +1,4 @@
-#define SOFT_VERSION 	161
+
 // switch to DAC
 // generate a new number of the nearest environment
 
@@ -16,25 +16,13 @@
 	// Segment_G PA  7
 	// Segment_P PC 14
 
-#include "stm32f1xx_hal.h"
-#include "rtc.h"
-#include "tim.h"
-#include "usart.h"
-#include "gpio.h"
+//**********************************************************************
 
-	#include <string.h>
-	#include <stdlib.h> // rand
 	#include "cipherglot17_sm.h"
-	#include "ringbuffer_dma_sm.h"
-	#include "flash_stm32f103_hal_sm.h"
-
-	#include "stdio.h"
-	#include "average_calc_3_from_5.h"
-
 
 //**********************************************************************
 
-RTC_TimeTypeDef TimeStruct  ;
+RTC_TimeTypeDef TimeStruct = { 0 }  ;
 
 #define END_NUMBER 1024
 
@@ -128,11 +116,11 @@ void CipherGlot_init(void) {
 	soft_version_arr_int[1] = ((SOFT_VERSION) /  10) %10 ;
 	soft_version_arr_int[2] = ((SOFT_VERSION)      ) %10 ;
 
-	sprintf(DataChar,"\r\n CipherGlot-17 2020-jan-21 v%d.%d.%d bubble sort\r\nUART1 for debug started on speed 115200\r\n",
+	sprintf(DataChar,"\r\n CipherGlot-17 v%d.%d.%d \r\nUART1 for debug on speed 115200 \r\n",
 			soft_version_arr_int[0],soft_version_arr_int[1],soft_version_arr_int[2]);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	sprintf(DataChar,"Press:\r\n 1 - load previous;\r\n 3 - load Pi;\r\n any key - start new.\r\n");
+	sprintf(DataChar,"Press:\r\n 'E' - load from EEPROM;\r\n '3' - load Pi;\r\n 'any_key' - start new.\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	Test_Segment();
@@ -140,8 +128,8 @@ void CipherGlot_init(void) {
 	game_type_u8 = TestLED();
 
 	switch (game_type_u8) {
-		case 1: {	// read Flash
-			sprintf(DataChar,"\r\n-> Start read from Flash:\r\n");
+		case 0x0E: {	// read EEPROM
+			sprintf(DataChar,"\r\n-> Start read from EEPROM:\r\n");
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 			uint32_t flash_value_u32;
@@ -161,11 +149,11 @@ void CipherGlot_init(void) {
 			TimeStruct.Seconds = (flash_value_u32 & 0x000000ff)       ;
 			HAL_RTC_SetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
 
-			sprintf(DataChar,"load time %u:%02u:%02u\r\n", TimeStruct.Hours, TimeStruct.Minutes, TimeStruct.Seconds);
+			sprintf(DataChar," load time %u:%02u:%02u \r\n", TimeStruct.Hours, TimeStruct.Minutes, TimeStruct.Seconds);
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 
-			sprintf(DataChar,"start_cipher_number: %d\r\ntotal_cipher_number: %d\r\n", (int)start_cipher_number_u32, (int)(total_cipher_number_u32 - start_cipher_number_u32));
+			sprintf(DataChar," start_cipher_number: %d; \r\n total_cipher_number: %d;  \r\n", (int)start_cipher_number_u32, (int)(total_cipher_number_u32 - start_cipher_number_u32));
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 			for (uint32_t flash_addr_u32 = 0; flash_addr_u32 < 0xFA; flash_addr_u32++) {
@@ -196,7 +184,7 @@ void CipherGlot_init(void) {
 				}
 			}
 
-			sprintf(DataChar,"Statistics_of_cipher:\r\n" );
+			sprintf(DataChar,"  Statistics_of_cipher: \r\n" );
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 			for (int i=0; i<10; i++) {
@@ -219,9 +207,7 @@ void CipherGlot_init(void) {
 				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 			}
 
-			//
-
-			sprintf(DataChar,"\r\n-> Finish read from flash.\r\n\r\n");
+			sprintf(DataChar,"\r\n-> Finish read from EEPROM. \r\n\r\n");
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 			current_cipher_number_u32 = start_cipher_number_u32;
 		} break;
@@ -295,7 +281,8 @@ void CipherGlot_main(void) {
 		total_cipher_number_u32 = 100*start_numb_arr_u8[0] + 10*start_numb_arr_u8[1] + start_numb_arr_u8[2];
 	}
 
-	Beeper(cipher_arr_u8[total_cipher_number_u32]);
+	//Beeper(cipher_arr_u8[total_cipher_number_u32]);
+	Beeper_12();
 	CipherPrint(cipher_arr_u8[total_cipher_number_u32]);
 	current_cipher_number_u32 = start_cipher_number_u32;
 
@@ -341,18 +328,18 @@ void CipherGlot_main(void) {
 
 				BeepCipherError(start_cipher_number_u32, current_cipher_number_u32, total_cipher_number_u32 + 1, stop_hours_u8, stop_minutes_u8, stop_second_u8 );
 
-				CipherPrint(0x0F);
+				CipherPrint(0x0E);
 				BlankIndicatorStop();
-				sprintf(DataChar,"** Press button 'F' to write to flash **\r\n");
+				sprintf(DataChar,"** Press 'E' to write to EEPROM **\r\n");
 				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-				if (KeyPressed() == 0x0F) {
+				if (KeyPressed() == 0x0E) {
 					Beeper_11();
 					CipherPrint(0x11);
 					HAL_Delay(300);
-					CipherPrint(0x0F);
+					CipherPrint(0x0E);
 					// write to Flash:
-					sprintf(DataChar,"\r\n-> Start write to flash:\r\n");
+					sprintf(DataChar,"\r\n-> Start write to EEPROM:\r\n");
 					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 					HAL_FLASH_Unlock();
@@ -380,20 +367,20 @@ void CipherGlot_main(void) {
 						Flash_Write( (MY_FLASH_PAGE_ADDR + (flash_addr_u32 + 2) * 4), flash_value_u32);
 					}
 					HAL_FLASH_Lock();
-					sprintf(DataChar,"-> Finish write to flash.\r\n\r\n");
+					sprintf(DataChar,"-> Finish write to EEPROM.\r\n\r\n");
 					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 				}
 				else {
 					Beeper_11();
 					CipherPrint(0x15);
-					sprintf(DataChar,"-- NO write to Flash --\r\n");
+					sprintf(DataChar,"-- NO write to EEPROM --\r\n");
 					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 				}
 
 				HAL_Delay(2000);
 				BlankIndicatorStart();
 
-				if (game_type_u8 != 1) {
+				if (game_type_u8 != 0x0E) {
 					total_cipher_number_u32 = start_cipher_number_u32;
 				}
 			}
@@ -404,7 +391,7 @@ void CipherGlot_main(void) {
 	HAL_TIM_Base_Stop(&htim4); // stop TIM4 prompt
 	if ( error_status_u8 == 0 ) {
 		total_cipher_number_u32++;
-		sprintf(DataChar," qnt: %d\r\n", (int)(1 + total_cipher_number_u32 - start_cipher_number_u32));
+		sprintf(DataChar," qnt %d;\r\n", (int)(1 + total_cipher_number_u32 - start_cipher_number_u32));
 		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 		}
 
@@ -487,20 +474,20 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 	Beeper_11();
 	CipherPrint(_StopMin_u8 % 10);	HAL_Delay(500);
 
-	CipherPrint(0x0E);
+	CipherPrint(0x0F);
 	BlankIndicatorStop();
-	sprintf(DataChar,"Press button 'E' to send on ThingSpeak\r\n");
+	sprintf(DataChar,"Press 'F' to send on ThingSpeak\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	if (KeyPressed() == 0x0E) {
-		CipherPrint(0x0E);
+	if (KeyPressed() == 0x0F) {
+		CipherPrint(0x0F);
 		Beeper_11();
 		char http_req[200];
 		sprintf(http_req, "&field8=%d\r\n\r\n", (int)MaxNumb );
 		RingBuffer_DMA_Connect();
 		CipherPrint(0x11);
 		Beeper_11();
-		CipherPrint(0x0E);
+		CipherPrint(0x0F);
 
 		RingBuffer_DMA_Main(http_req);
 		Beeper_11();
@@ -523,7 +510,7 @@ void BeepCipherError(uint32_t StartNumb, uint32_t CurNumb, uint32_t MaxNumb, uin
 
 void Generate_New_Cipher (void) {
 	if (game_type_u8 == 3)	return;
-	if ((game_type_u8 == 1) && (current_cipher_number_u32 <= previous_cipher_number_u32)) return;
+	if ((game_type_u8 == 0x0E) && (current_cipher_number_u32 <= previous_cipher_number_u32)) return;
 
 	//		Generate_New_Cipher with letter char
 	//	if ( total_cipher_number_u32 % 4 == 0 ) {
@@ -549,7 +536,16 @@ void Generate_New_Cipher (void) {
 			(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 2]) ||
 			(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 3]) );
 
-	sprintf(DataChar,"new Cipher: %X\r\n", cipher_arr_u8[total_cipher_number_u32]);
+	RTC_TimeTypeDef _TimeStructLoc = { 0 } ;
+	HAL_RTC_GetTime( &hrtc, &_TimeStructLoc, RTC_FORMAT_BIN );
+	uint8_t stop_hours_u8   = _TimeStructLoc.Hours   ;
+	uint8_t stop_minutes_u8 = _TimeStructLoc.Minutes ;
+	uint8_t stop_second_u8  = _TimeStructLoc.Seconds  ;
+
+	sprintf(DataChar," %d:%02d:%02d; \r\n", (int)stop_hours_u8, (int)stop_minutes_u8, (int)stop_second_u8);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	sprintf(DataChar," new %X. \r\n", cipher_arr_u8[total_cipher_number_u32]);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 }
 //--------------------------------------------------------------------------
@@ -1173,7 +1169,8 @@ void TheEnd(void) {
 //**********************************************************************
 
 void BeepCipher_OK(uint8_t _cipher) {
-	Beeper(_cipher);
+	//Beeper(_cipher);
+	Beeper_11();
 	//CipherPrint(0x10); // point
 	HAL_Delay(200);
 	//CipherPrint(0x11); // blank
