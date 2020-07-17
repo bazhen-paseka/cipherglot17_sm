@@ -22,8 +22,6 @@
 
 //**********************************************************************
 
-RTC_TimeTypeDef TimeStruct = { 0 }  ;
-
 #define END_NUMBER 1024
 
 uint8_t cipher_arr_u8[END_NUMBER] = {3,
@@ -51,7 +49,6 @@ uint8_t cipher_arr_u8[END_NUMBER] = {3,
 
 uint8_t blank_u8 					= 0 ;
 uint8_t prompt_u8 					= 0 ;
-uint8_t error_status_u8				= 0 ;
 uint8_t game_type_u8				= 3 ; // Pi or Old
 
 uint32_t start_cipher_number_u32   	= 0 ;
@@ -101,10 +98,10 @@ void Prompt_Start (void) 			;
 
 void PrintSoftVersion(int *_soft_version_arr_int)	;
 
-void Show_QNT(uint32_t _startNumb, uint32_t _maxNumb)							;
-void Show_Time(uint8_t _stopHour_u8, uint8_t _stopMin_u8, uint8_t _stopSec_u8)	;
-void Write_to_EEPROM(uint32_t _startNumb_u32, uint32_t _maxNumb_u32, uint8_t _stopHour_u8, uint8_t _stopMin_u8, uint8_t _stopSec_u8) ;
-void Thingspeak_over_wiFi(uint32_t _startNumb, uint32_t _maxNumb )				;
+void Show_QNT  (uint32_t _startNumb, uint32_t _maxNumb)					;
+void Show_Time (void)													;
+void Write_to_EEPROM (uint32_t _startNumb_u32, uint32_t _maxNumb_u32 )	;
+void Thingspeak_over_wiFi (uint32_t _startNumb, uint32_t _maxNumb )		;
 
 //**********************************************************************
 
@@ -151,6 +148,7 @@ void CipherGlot_init(void) {
 			previous_cipher_number_u32 = total_cipher_number_u32;
 
 			flash_value_u32 = Flash_Read(MY_FLASH_PAGE_ADDR + 4);	//	read Time
+			RTC_TimeTypeDef TimeStruct = { 0 }  ;
 			TimeStruct.Hours   = (flash_value_u32 & 0x00ff0000) >> 16 ;
 			TimeStruct.Minutes = (flash_value_u32 & 0x0000ff00) >> 8  ;
 			TimeStruct.Seconds = (flash_value_u32 & 0x000000ff)       ;
@@ -217,6 +215,8 @@ void CipherGlot_init(void) {
 			sprintf(DataChar,"\r\n-> Finish read from EEPROM. \r\n\r\n");
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 			current_cipher_number_u32 = start_cipher_number_u32;
+
+			Show_QNT( start_cipher_number_u32, total_cipher_number_u32 ) ;
 		} break;
 
 		case 3: {
@@ -252,6 +252,7 @@ void CipherGlot_init(void) {
 
 void CipherGlot_main(void) {
 	if (total_cipher_number_u32 == start_cipher_number_u32) {
+		RTC_TimeTypeDef TimeStruct = { 0 }  ;
 		TimeStruct.Hours   = 0;
 		TimeStruct.Minutes = 0;
 		TimeStruct.Seconds = 0;
@@ -301,53 +302,29 @@ void CipherGlot_main(void) {
 		sprintf(DataChar," %X", (int)cipher_arr_u8[current_cipher_number_u32]);	// hint current Cipher
 		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-		if ( KeyPressed() == 0x0A) {
-			Prompt_Stop();
-			Beeper_12();
+		uint8_t current_key_u8 = KeyPressed();
+
+		if ( current_key_u8 == 0x0A) {
 			Show_QNT( start_cipher_number_u32, total_cipher_number_u32 ) ;
-			Prompt_Start();
-			current_cipher_number_u32 = start_cipher_number_u32 ;
-			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+			continue ;
 		}
 
-		if ( KeyPressed() == 0x0B) {
-			Prompt_Stop();
-			Beeper_12();
-			HAL_RTC_GetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
-			uint8_t hours_u8   = TimeStruct.Hours   ;
-			uint8_t minutes_u8 = TimeStruct.Minutes ;
-			uint8_t second_u8  = TimeStruct.Seconds  ;
-			Show_Time(hours_u8, minutes_u8, second_u8) ;
-
-			Prompt_Start();
-			current_cipher_number_u32 = start_cipher_number_u32 ;
-			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+		if ( current_key_u8 == 0x0B) {
+			Show_Time() ;
+			continue ;
 		}
 
-		if ( KeyPressed() == 0x0E) {
-			Prompt_Stop();
-			Beeper_12();
-			HAL_RTC_GetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
-			uint8_t hours_u8   = TimeStruct.Hours   ;
-			uint8_t minutes_u8 = TimeStruct.Minutes ;
-			uint8_t second_u8  = TimeStruct.Seconds  ;
-			Write_to_EEPROM(start_cipher_number_u32, total_cipher_number_u32, hours_u8, minutes_u8, second_u8) ;
-			Prompt_Start();
-			current_cipher_number_u32 = start_cipher_number_u32 ;
-			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+		if ( current_key_u8 == 0x0E) {
+			Write_to_EEPROM( start_cipher_number_u32, total_cipher_number_u32 ) ;
+			continue ;
 		}
 
-		if ( KeyPressed() == 0x0F) {
-			Prompt_Stop();
-			Beeper_12();
+		if ( current_key_u8 == 0x0F) {
 			Thingspeak_over_wiFi( start_cipher_number_u32, total_cipher_number_u32 ) ;
-			Prompt_Start();
-			current_cipher_number_u32 = start_cipher_number_u32 ;
-			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+			continue ;
 		}
 
-		if ( KeyPressed() == cipher_arr_u8[current_cipher_number_u32]) {
-			error_status_u8 = 0;
+		if ( current_key_u8 == cipher_arr_u8[current_cipher_number_u32]) {
 			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 			BeepCipher_OK(cipher_arr_u8[current_cipher_number_u32]);
 			current_cipher_number_u32++;
@@ -356,25 +333,19 @@ void CipherGlot_main(void) {
 			set_Prompt(0);
 		}
 		else {
-			error_status_u8++;
-			if (error_status_u8 > 0) {
-				sprintf(DataChar," Error\r\n");
-				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-
-				BeepError2();
-				CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
-				current_cipher_number_u32 = start_cipher_number_u32;
-			}
+			sprintf(DataChar," Error\r\n");
+			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+			BeepError2();
+			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+			current_cipher_number_u32 = start_cipher_number_u32;
 		}
 	} // do Komp
-	while ((current_cipher_number_u32 <= total_cipher_number_u32 ) && ( error_status_u8 < 4 ));
+	while (current_cipher_number_u32 <= total_cipher_number_u32 );
 
-	Prompt_Stop() ;
-	if ( error_status_u8 == 0 ) {
-		total_cipher_number_u32++;
-		sprintf(DataChar," qnt %d;\r\n", (int)(1 + total_cipher_number_u32 - start_cipher_number_u32));
-		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-		}
+	//Prompt_Stop() ;
+	total_cipher_number_u32++;
+	sprintf(DataChar," qnt %d;\r\n", (int)(1 + total_cipher_number_u32 - start_cipher_number_u32));
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	if (total_cipher_number_u32 >= END_NUMBER) {
 		TheEnd();
@@ -897,13 +868,22 @@ void CipherPrint (uint8_t num) {
 		Segment_D(1);
 				Segment_P(0);
 		}
+
+	if (num==0x28) {		// "?"
+		Segment_A(1);
+	Segment_F(0);Segment_B(1);
+		Segment_G(1);
+	Segment_E(1);Segment_C(0);
+		Segment_D(0);
+				Segment_P(1);
+		}
 }
 //**********************************************************************
 
 uint8_t TestLED(void) {
 	uint8_t start_key_u8 = 0;
 
-	CipherPrint(0x27);
+	CipherPrint(0x28);
 	Beeper_12();
 	Beeper_11();
 	start_key_u8 = KeyPressed();
@@ -912,11 +892,11 @@ uint8_t TestLED(void) {
 	CipherPrint(start_key_u8);
 	HAL_Delay(500);
 
-	if (start_key_u8 != 1) {
+	if (start_key_u8 != 0x0E) {
 		for (uint32_t i=0; i<=start_key_u8 ; i++) {
 			Beeper_11();
 			CipherPrint(i);
-			HAL_Delay(300);
+			HAL_Delay(200);
 		}
 	}
 
@@ -934,8 +914,8 @@ void PrintSoftVersion(int *_soft_version_arr_int) {
 	HAL_Delay(500);
 	for (uint32_t i=0; i<3 ; i++) {
 		Beeper_11();
-		CipherPrint(_soft_version_arr_int[i]);
-		HAL_Delay(300);
+		CipherPrint(_soft_version_arr_int[i]); 	HAL_Delay(300);
+		CipherPrint(0x11);						HAL_Delay(100);
 	}
 	CipherPrint(0x11); // blank
 	HAL_Delay(1000);
@@ -1071,13 +1051,14 @@ void BlankIndicatorStop (void) {
 void Show_QNT(uint32_t _startNumb, uint32_t _maxNumb) {
 	uint32_t cipher_QNT_u32 = _maxNumb + 1 - _startNumb;
 
-	BlankIndicatorStop();
-	CipherPrint(0x25); // 'n'
-	HAL_Delay(500);
-
-	Beeper_12();							HAL_Delay(300);
 	sprintf(DataChar," QNT: %d\r\n", (int)cipher_QNT_u32);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+	Prompt_Stop();
+	BlankIndicatorStop();
+
+	Beeper_12();
+	CipherPrint(0x25); 						HAL_Delay(500);		// 'n'
+	CipherPrint(0x11);						HAL_Delay(100);
 
 	Beeper_11();
 	CipherPrint(cipher_QNT_u32/100);		HAL_Delay(500);
@@ -1089,23 +1070,31 @@ void Show_QNT(uint32_t _startNumb, uint32_t _maxNumb) {
 
 	Beeper_11();
 	CipherPrint(cipher_QNT_u32%10);			HAL_Delay(500);
-	CipherPrint(0x11);						HAL_Delay(500);		// 'blank'
-	HAL_Delay(1000);
+	CipherPrint(0x11);						HAL_Delay(1000);		// 'blank'
 
 	BlankIndicatorStart();
+	Prompt_Start();
+	current_cipher_number_u32 = start_cipher_number_u32 ;
+	CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 }
 //**********************************************************************
 
-void Show_Time(uint8_t _stopHour_u8, uint8_t _stopMin_u8, uint8_t _stopSec_u8) {
+void Show_Time(void) {
+	Prompt_Stop();
 	BlankIndicatorStop();
-	CipherPrint(0x26);		// 't'
-	HAL_Delay(500);
+
+	RTC_TimeTypeDef TimeStruct = { 0 }  ;
+	HAL_RTC_GetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
+	uint8_t _stopHour_u8   = TimeStruct.Hours   ;
+	uint8_t _stopMin_u8 = TimeStruct.Minutes ;
+	uint8_t _stopSec_u8  = TimeStruct.Seconds  ;
 
 	sprintf(DataChar," Time %d:%02d:%02d\r\n", (int)_stopHour_u8, (int)_stopMin_u8, (int)_stopSec_u8);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	Beeper_12();					HAL_Delay(300);
-	Beeper_12();					HAL_Delay(300);
+	Beeper_12();
+	CipherPrint(0x26);				HAL_Delay(500);		// 't'
+	CipherPrint(0x11);				HAL_Delay(100);
 
 	Beeper_11();
 	CipherPrint(_stopHour_u8 % 10);	HAL_Delay(500);
@@ -1117,17 +1106,22 @@ void Show_Time(uint8_t _stopHour_u8, uint8_t _stopMin_u8, uint8_t _stopSec_u8) {
 
 	Beeper_11();
 	CipherPrint(_stopMin_u8 % 10);	HAL_Delay(500);
-	CipherPrint(0x11);
-	HAL_Delay(1000);
+	CipherPrint(0x11);				HAL_Delay(1000);
 
 	BlankIndicatorStart();
+	Prompt_Start();
+	current_cipher_number_u32 = start_cipher_number_u32 ;
+	CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 }
 //**********************************************************************
 
 void Thingspeak_over_wiFi(uint32_t _startNumb, uint32_t _maxNumb ) {
 	uint32_t cipher_QNT_u32 = _maxNumb + 1 - _startNumb;
+	Prompt_Stop();
 	BlankIndicatorStop();
+
 	CipherPrint(0x0F); // 'F'
+	Beeper_12();
 
 	sprintf(DataChar,"Press 'D' to send on ThingSpeak\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -1154,16 +1148,29 @@ void Thingspeak_over_wiFi(uint32_t _startNumb, uint32_t _maxNumb ) {
 	}
 	HAL_Delay(1000);
 	BlankIndicatorStart();
+	Prompt_Start();
+	current_cipher_number_u32 = start_cipher_number_u32 ;
+	CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 }
 //**********************************************************************
 
-void Write_to_EEPROM(uint32_t _startNumb_u32, uint32_t _maxNumb_u32, uint8_t _stopHour_u8, uint8_t _stopMin_u8, uint8_t _stopSec_u8) {
-	_maxNumb_u32 = _maxNumb_u32 + 1 ;
+void Write_to_EEPROM(uint32_t _startNumb_u32, uint32_t _maxNumb_u32 ) {
+	Prompt_Stop();
 	BlankIndicatorStop();
+
 	CipherPrint(0x0E);
+	Beeper_12();
 
 	sprintf(DataChar,"** Press 'D' to write to EEPROM **\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	_maxNumb_u32 = _maxNumb_u32 + 1 ;
+
+	RTC_TimeTypeDef TimeStruct = { 0 }  ;
+	HAL_RTC_GetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
+	uint8_t _stopHour_u8	= TimeStruct.Hours   ;
+	uint8_t _stopMin_u8		= TimeStruct.Minutes ;
+	uint8_t _stopSec_u8		= TimeStruct.Seconds  ;
 
 	if (KeyPressed() == 0x0D) {
 		Beeper_11();
@@ -1210,6 +1217,9 @@ void Write_to_EEPROM(uint32_t _startNumb_u32, uint32_t _maxNumb_u32, uint8_t _st
 	}
 	HAL_Delay(1000);
 	BlankIndicatorStart();
+	Prompt_Start();
+	current_cipher_number_u32 = start_cipher_number_u32 ;
+	CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 }
 //**********************************************************************
 
