@@ -302,53 +302,29 @@ void CipherGlot_main(void) {
 		sprintf(DataChar," %X", (int)cipher_arr_u8[current_cipher_number_u32]);	// hint current Cipher
 		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-		if ( KeyPressed() == 0x0A) {
-			Prompt_Stop();
-			Beeper_12();
+		uint8_t current_key_u8 = KeyPressed();
+
+		if ( current_key_u8 == 0x0A) {
 			Show_QNT( start_cipher_number_u32, total_cipher_number_u32 ) ;
-			Prompt_Start();
-			current_cipher_number_u32 = start_cipher_number_u32 ;
-			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+			continue ;
 		}
 
-		if ( KeyPressed() == 0x0B) {
-			Prompt_Stop();
-			Beeper_12();
-			HAL_RTC_GetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
-			uint8_t hours_u8   = TimeStruct.Hours   ;
-			uint8_t minutes_u8 = TimeStruct.Minutes ;
-			uint8_t second_u8  = TimeStruct.Seconds  ;
-			Show_Time(hours_u8, minutes_u8, second_u8) ;
-
-			Prompt_Start();
-			current_cipher_number_u32 = start_cipher_number_u32 ;
-			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+		if ( current_key_u8 == 0x0B) {
+			Show_Time() ;
+			continue ;
 		}
 
-		if ( KeyPressed() == 0x0E) {
-			Prompt_Stop();
-			Beeper_12();
-			HAL_RTC_GetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
-			uint8_t hours_u8   = TimeStruct.Hours   ;
-			uint8_t minutes_u8 = TimeStruct.Minutes ;
-			uint8_t second_u8  = TimeStruct.Seconds  ;
-			Write_to_EEPROM(start_cipher_number_u32, total_cipher_number_u32, hours_u8, minutes_u8, second_u8) ;
-			Prompt_Start();
-			current_cipher_number_u32 = start_cipher_number_u32 ;
-			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+		if ( current_key_u8 == 0x0E) {
+			Write_to_EEPROM( start_cipher_number_u32, total_cipher_number_u32 ) ;
+			continue ;
 		}
 
-		if ( KeyPressed() == 0x0F) {
-			Prompt_Stop();
-			Beeper_12();
+		if ( current_key_u8 == 0x0F) {
 			Thingspeak_over_wiFi( start_cipher_number_u32, total_cipher_number_u32 ) ;
-			Prompt_Start();
-			current_cipher_number_u32 = start_cipher_number_u32 ;
-			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+			continue ;
 		}
 
-		if ( KeyPressed() == cipher_arr_u8[current_cipher_number_u32]) {
-			error_status_u8 = 0;
+		if ( current_key_u8 == cipher_arr_u8[current_cipher_number_u32]) {
 			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 			BeepCipher_OK(cipher_arr_u8[current_cipher_number_u32]);
 			current_cipher_number_u32++;
