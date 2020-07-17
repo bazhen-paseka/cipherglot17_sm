@@ -47,6 +47,8 @@ uint8_t cipher_arr_u8[END_NUMBER] = {3,
 	//		  18577 80532 17122 68066 13001  92787 66111 95909 21642 01989
 };
 
+uint32_t cipher_time_arr_u32 [END_NUMBER] = { 0 } ;
+
 uint8_t blank_u8 					= 0 ;
 uint8_t prompt_u8 					= 0 ;
 uint8_t game_type_u8				= 3 ; // Pi or Old
@@ -101,7 +103,8 @@ void PrintSoftVersion(int *_soft_version_arr_int)	;
 void Show_QNT  (uint32_t _startNumb, uint32_t _maxNumb)					;
 void Show_Time (void)													;
 void Write_to_EEPROM (uint32_t _startNumb_u32, uint32_t _maxNumb_u32 )	;
-void Thingspeak_over_wiFi (uint32_t _startNumb, uint32_t _maxNumb )		;
+void Thingspeak_over_wiFi ( uint32_t _startNumb, uint32_t _maxNumb )	;
+void Download_Statistics  ( uint32_t _startNumb, uint32_t _maxNumb )	;
 
 //**********************************************************************
 
@@ -314,6 +317,11 @@ void CipherGlot_main(void) {
 			continue ;
 		}
 
+		if ( current_key_u8 == 0x0C) {
+			Download_Statistics( start_cipher_number_u32, total_cipher_number_u32 ) ;
+			continue ;
+		}
+
 		if ( current_key_u8 == 0x0E) {
 			Write_to_EEPROM( start_cipher_number_u32, total_cipher_number_u32 ) ;
 			continue ;
@@ -366,11 +374,13 @@ void Generate_New_Cipher (void) {
 
 	RTC_TimeTypeDef _TimeStructLoc = { 0 } ;
 	HAL_RTC_GetTime( &hrtc, &_TimeStructLoc, RTC_FORMAT_BIN );
-	uint8_t stop_hours_u8   = _TimeStructLoc.Hours   ;
-	uint8_t stop_minutes_u8 = _TimeStructLoc.Minutes ;
-	uint8_t stop_second_u8  = _TimeStructLoc.Seconds  ;
+	uint8_t hour_u8   = _TimeStructLoc.Hours   ;
+	uint8_t min_u8 = _TimeStructLoc.Minutes ;
+	uint8_t sec_u8  = _TimeStructLoc.Seconds  ;
 
-	sprintf(DataChar," %d:%02d:%02d; \r\n", (int)stop_hours_u8, (int)stop_minutes_u8, (int)stop_second_u8);
+	cipher_time_arr_u32[total_cipher_number_u32] =  3600*hour_u8 + 60*min_u8 + sec_u8;
+
+	sprintf(DataChar," %d:%02d:%02d; \r\n", (int)hour_u8, (int)min_u8, (int)sec_u8);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	sprintf(DataChar," new %X. \r\n", cipher_arr_u8[total_cipher_number_u32]);
@@ -1237,3 +1247,30 @@ uint8_t Prompt_Status(void) {
 	return prompt_u8;
 }
 //**********************************************************************
+
+void Download_Statistics( uint32_t _startNumb, uint32_t _maxNumb ) {
+
+	Prompt_Stop() ;
+	BlankIndicatorStop() ;
+
+	sprintf(DataChar," Download time statistics\r\n" ) ;
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	Beeper_12() ;
+	CipherPrint(0x0C) ;				HAL_Delay(300) ;		// 'C'
+
+	for ( uint32_t i = _startNumb; i <= (_maxNumb + 1); i++) {
+		sprintf(DataChar,"%d\t%d\r\n", (int)i, (int)cipher_time_arr_u32[i] ) ;
+		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+	}
+
+	Beeper_11();
+	CipherPrint(0x11);				HAL_Delay(300);
+
+	BlankIndicatorStart();
+	Prompt_Start();
+	current_cipher_number_u32 = start_cipher_number_u32 ;
+	CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+}
+//**********************************************************************
+
