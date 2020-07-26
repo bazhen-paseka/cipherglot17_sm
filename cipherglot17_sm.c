@@ -51,30 +51,14 @@ uint32_t cipher_time_arr_u32 [END_NUMBER] = { 0 } ;
 
 uint8_t blank_u8 					= 0 ;
 uint8_t prompt_u8 					= 0 ;
-uint8_t game_type_u8				= 3 ; // Pi or Old
+uint8_t game_type_u8				= 0 ; // Pi, 4 or Old
 
 uint32_t start_cipher_number_u32   	= 0 ;
 uint32_t current_cipher_number_u32 	= 0 ;
 uint32_t total_cipher_number_u32   	= 0 ;
 uint32_t previous_cipher_number_u32	= 0 ;
 
-char DataChar[100];
-
 //**********************************************************************
-
-void Segment_A(uint8_t)		;	// A	бело-зеленый
-void Segment_B(uint8_t)		;	// B	зеленый
-void Segment_C(uint8_t)		;	// C	бело-оранжевый
-void Segment_D(uint8_t)		;	// D	cиний
-void Segment_E(uint8_t)		;	// E	бело-cиний
-void Segment_F(uint8_t)		;	// F	оранжевый
-void Segment_G(uint8_t)		;	// G	бело-коричневый
-void Segment_P(uint8_t)		;	// p	коричневый
-
-void ScanRow_123A(uint8_t)	;
-void ScanRow_456B(uint8_t)	;
-void ScanRow_789C(uint8_t)	;
-void ScanRow_E0FD(uint8_t)	;
 
 void Generate_New_Cipher(void)		;
 void CipherPrint (uint8_t)			;
@@ -106,15 +90,31 @@ void Write_to_EEPROM (uint32_t _startNumb_u32, uint32_t _maxNumb_u32 )	;
 void Thingspeak_over_wiFi ( uint32_t _startNumb, uint32_t _maxNumb )	;
 void Download_Statistics  ( uint32_t _startNumb, uint32_t _maxNumb )	;
 
+void Segment_A(uint8_t)		;	// A	бело-зеленый
+void Segment_B(uint8_t)		;	// B	зеленый
+void Segment_C(uint8_t)		;	// C	бело-оранжевый
+void Segment_D(uint8_t)		;	// D	cиний
+void Segment_E(uint8_t)		;	// E	бело-cиний
+void Segment_F(uint8_t)		;	// F	оранжевый
+void Segment_G(uint8_t)		;	// G	бело-коричневый
+void Segment_P(uint8_t)		;	// p	коричневый
+
+void ScanRow_123A(uint8_t)	;
+void ScanRow_456B(uint8_t)	;
+void ScanRow_789C(uint8_t)	;
+void ScanRow_E0FD(uint8_t)	;
+
+
 //**********************************************************************
 
 void CipherGlot_init(void) {
-	MX_RTC_Init();
-	MX_TIM2_Init();
-	MX_TIM3_Init();
-	MX_TIM4_Init();
-	MX_USART1_UART_Init();
+//	MX_RTC_Init();
+//	MX_TIM2_Init();
+//	MX_TIM3_Init();
+//	MX_TIM4_Init();
+//	MX_USART1_UART_Init();
 
+	char DataChar[100];
 	//HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
 	BlankIndicatorStart();
 
@@ -254,6 +254,7 @@ void CipherGlot_init(void) {
 //**********************************************************************
 
 void CipherGlot_main(void) {
+	char DataChar[100];
 	if (total_cipher_number_u32 == start_cipher_number_u32) {
 		RTC_TimeTypeDef TimeStruct = { 0 }  ;
 		TimeStruct.Hours   = 0;
@@ -263,6 +264,20 @@ void CipherGlot_main(void) {
 	}
 
 	Generate_New_Cipher();
+
+	{	//debug print time and new cipher
+		RTC_TimeTypeDef _TimeStructLoc = { 0 } ;
+		HAL_RTC_GetTime( &hrtc, &_TimeStructLoc, RTC_FORMAT_BIN );
+		uint8_t hour_u8   = _TimeStructLoc.Hours   ;
+		uint8_t min_u8 = _TimeStructLoc.Minutes ;
+		uint8_t sec_u8  = _TimeStructLoc.Seconds  ;
+
+		sprintf(DataChar," %d:%02d:%02d; \r\n", (int)hour_u8, (int)min_u8, (int)sec_u8);
+		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+		sprintf(DataChar," new %X. \r\n", cipher_arr_u8[total_cipher_number_u32]);
+		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+	}
 
 	if ((game_type_u8 == 3) && (total_cipher_number_u32 == start_cipher_number_u32) ) {
 		uint8_t start_numb_arr_u8[3]  = {0,0,0} ;
@@ -362,29 +377,107 @@ void CipherGlot_main(void) {
 //**********************************************************************
 
 void Generate_New_Cipher (void) {
-	if (game_type_u8 == 3)	return;
-	if ((game_type_u8 == 0x0E) && (current_cipher_number_u32 <= previous_cipher_number_u32)) return;
-
-	do {
-		cipher_arr_u8[total_cipher_number_u32] = rand()%10; // 0x00 .. 0x0F
+	if (game_type_u8 == 3) {
+		return;
 	}
-	while ( (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 1]) ||
-			(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 2]) ||
-			(cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 3]) );
 
-	RTC_TimeTypeDef _TimeStructLoc = { 0 } ;
-	HAL_RTC_GetTime( &hrtc, &_TimeStructLoc, RTC_FORMAT_BIN );
-	uint8_t hour_u8   = _TimeStructLoc.Hours   ;
-	uint8_t min_u8 = _TimeStructLoc.Minutes ;
-	uint8_t sec_u8  = _TimeStructLoc.Seconds  ;
+	if (	(game_type_u8 == 0x0E)
+		&&	(current_cipher_number_u32 <= previous_cipher_number_u32)) {
+		return;
+	}
 
+	uint8_t status_u8 = 0;
+	do {
+		uint8_t 	new_cipher_u8 = rand()%10;
+		uint8_t 	previuos_cipher_u8 = cipher_arr_u8[total_cipher_number_u32 - 1] ;
+
+		cipher_arr_u8[total_cipher_number_u32] = new_cipher_u8 ;
+
+		if (game_type_u8 == 4) {
+			switch (new_cipher_u8) {
+				case 1:	{	if (	( previuos_cipher_u8 == 2 )
+								||	( previuos_cipher_u8 == 4 )
+								||	( previuos_cipher_u8 == 5 ) ) status_u8 = 1 ;
+				} break ;
+
+				case 2:	{	if ( 	( previuos_cipher_u8 == 1 )
+								||	( previuos_cipher_u8 == 4 )
+								||	( previuos_cipher_u8 == 5 )
+								||	( previuos_cipher_u8 == 6 )
+								||	( previuos_cipher_u8 == 3 )	 ) status_u8 = 1;
+				} break ;
+
+				case 3:	{	if ( 	( previuos_cipher_u8 == 2 )
+								||	( previuos_cipher_u8 == 5 )
+								||	( previuos_cipher_u8 == 6 )	 ) status_u8 = 1;
+				} break ;
+
+				case 4 : {	if ( 	( previuos_cipher_u8 == 1 )
+								||	( previuos_cipher_u8 == 2 )
+								||	( previuos_cipher_u8 == 5 )
+								||	( previuos_cipher_u8 == 8 )
+								||	( previuos_cipher_u8 == 7 )	 ) status_u8 = 1;
+				} break ;
+
+				case 5 : {	if ( 	( previuos_cipher_u8 == 1 )
+								||	( previuos_cipher_u8 == 2 )
+								||	( previuos_cipher_u8 == 3 )
+								||	( previuos_cipher_u8 == 4 )
+								||	( previuos_cipher_u8 == 6 )
+								||	( previuos_cipher_u8 == 7 )
+								||	( previuos_cipher_u8 == 8 )
+								||	( previuos_cipher_u8 == 9 )	 ) status_u8 = 1;
+				} break ;
+
+				case 6 : {	if ( 	( previuos_cipher_u8 == 3 )
+								||	( previuos_cipher_u8 == 2 )
+								||	( previuos_cipher_u8 == 5 )
+								||	( previuos_cipher_u8 == 8 )
+								||	( previuos_cipher_u8 == 9 )	 ) status_u8 = 1;
+				} break ;
+
+				case 7 : {	if ( 	( previuos_cipher_u8 == 4 )
+								||	( previuos_cipher_u8 == 5 )
+								||	( previuos_cipher_u8 == 8 )
+								||	( previuos_cipher_u8 == 0 )	 ) status_u8 = 1;
+				} break ;
+
+				case 8 : {	if ( 	( previuos_cipher_u8 == 7 )
+								||	( previuos_cipher_u8 == 4 )
+								||	( previuos_cipher_u8 == 5 )
+								||	( previuos_cipher_u8 == 6 )
+								||	( previuos_cipher_u8 == 9 )
+								||	( previuos_cipher_u8 == 0 )	 ) status_u8 = 1;
+				} break ;
+
+				case 9 : {	if ( 	( previuos_cipher_u8 == 0 )
+								||	( previuos_cipher_u8 == 8 )
+								||	( previuos_cipher_u8 == 5 )
+								||	( previuos_cipher_u8 == 6 )	 ) status_u8 = 1;
+				} break ;
+
+				case 0 : {	if ( 	( previuos_cipher_u8 == 7 )
+								||	( previuos_cipher_u8 == 8 )
+								||	( previuos_cipher_u8 == 9 )	 ) status_u8 = 1;
+				} break ;
+
+				default : {		status_u8 = 0;
+				} break ;
+			}
+		}	//	if (game_type_u8 == 4)
+
+		if (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 1])	status_u8 = 0 ;
+		if (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 2])	status_u8 = 0 ;
+		if (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 3])	status_u8 = 0 ;
+
+	}	while (status_u8 == 0) ;
+
+	RTC_TimeTypeDef timeStruct = { 0 } ;
+	HAL_RTC_GetTime( &hrtc, &timeStruct, RTC_FORMAT_BIN );
+	uint8_t hour_u8	= timeStruct.Hours		;
+	uint8_t  min_u8	= timeStruct.Minutes	;
+	uint8_t  sec_u8	= timeStruct.Seconds	;
 	cipher_time_arr_u32[total_cipher_number_u32] =  3600*hour_u8 + 60*min_u8 + sec_u8;
-
-	sprintf(DataChar," %d:%02d:%02d; \r\n", (int)hour_u8, (int)min_u8, (int)sec_u8);
-	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-
-	sprintf(DataChar," new %X. \r\n", cipher_arr_u8[total_cipher_number_u32]);
-	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 }
 //--------------------------------------------------------------------------
 
@@ -398,6 +491,7 @@ uint8_t ScanKeyBoard(void) {
 	do {
 		if (Prompt_Status() == 1 ) {
 			if (previous_cipher_u8 != cipher_arr_u8[current_cipher_number_u32]) {
+				char DataChar[100];
 				sprintf(DataChar," hint: %X\r\n", (int)cipher_arr_u8[current_cipher_number_u32]);
 				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 				previous_cipher_u8 = cipher_arr_u8[current_cipher_number_u32];
@@ -1060,7 +1154,7 @@ void BlankIndicatorStop (void) {
 
 void Show_QNT(uint32_t _startNumb, uint32_t _maxNumb) {
 	uint32_t cipher_QNT_u32 = _maxNumb + 1 - _startNumb;
-
+	char DataChar[100];
 	sprintf(DataChar," QNT: %d\r\n", (int)cipher_QNT_u32);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 	Prompt_Stop();
@@ -1098,7 +1192,7 @@ void Show_Time(void) {
 	uint8_t _stopHour_u8   = TimeStruct.Hours   ;
 	uint8_t _stopMin_u8 = TimeStruct.Minutes ;
 	uint8_t _stopSec_u8  = TimeStruct.Seconds  ;
-
+	char DataChar[100];
 	sprintf(DataChar," Time %d:%02d:%02d\r\n", (int)_stopHour_u8, (int)_stopMin_u8, (int)_stopSec_u8);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
@@ -1132,7 +1226,7 @@ void Thingspeak_over_wiFi(uint32_t _startNumb, uint32_t _maxNumb ) {
 
 	CipherPrint(0x0F); // 'F'
 	Beeper_12();
-
+	char DataChar[100];
 	sprintf(DataChar,"Press 'D' to send on ThingSpeak\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
@@ -1170,7 +1264,7 @@ void Write_to_EEPROM(uint32_t _startNumb_u32, uint32_t _maxNumb_u32 ) {
 
 	CipherPrint(0x0E);
 	Beeper_12();
-
+	char DataChar[100];
 	sprintf(DataChar,"** Press 'D' to write to EEPROM **\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
@@ -1252,7 +1346,7 @@ void Download_Statistics( uint32_t _startNumb, uint32_t _maxNumb ) {
 
 	Prompt_Stop() ;
 	BlankIndicatorStop() ;
-
+	char DataChar[100];
 	sprintf(DataChar," Download time statistics\r\n" ) ;
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
