@@ -1226,6 +1226,7 @@ void Thingspeak_over_wiFi(uint32_t _startNumb, uint32_t _maxNumb ) {
 
 	CipherPrint(0x0F); // 'F'
 	Beeper_12();
+	HAL_Delay(1000);
 	char DataChar[100];
 	sprintf(DataChar,"Press 'D' to send on ThingSpeak\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -1264,6 +1265,7 @@ void Write_to_EEPROM(uint32_t _startNumb_u32, uint32_t _maxNumb_u32 ) {
 
 	CipherPrint(0x0E);
 	Beeper_12();
+	HAL_Delay(1000);
 	char DataChar[100];
 	sprintf(DataChar,"** Press 'D' to write to EEPROM **\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
