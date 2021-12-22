@@ -388,6 +388,7 @@ void Generate_New_Cipher (void) {
 
 	uint8_t status_u8 = 0;
 	do {
+		status_u8 = 1;
 		uint8_t 	new_cipher_u8 = rand()%10;
 		uint8_t 	previuos_cipher_u8 = cipher_arr_u8[total_cipher_number_u32 - 1] ;
 
