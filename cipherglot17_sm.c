@@ -1328,12 +1328,12 @@ void Write_to_EEPROM(uint32_t _startNumb_u32, uint32_t _maxNumb_u32 ) {
 //**********************************************************************
 
 void Prompt_Stop (void) {
-	HAL_TIM_Base_Stop(&htim4); // stop TIM4 prompt
+	HAL_TIM_Base_Stop_IT(&htim4); // stop TIM4 prompt
 }
 //**********************************************************************
 
 void Prompt_Start (void) {
-	HAL_TIM_Base_Start(&htim4) ; // start TIM4 prompt
+	HAL_TIM_Base_Start_IT(&htim4) ; // start TIM4 prompt
 }
 //**********************************************************************
 
