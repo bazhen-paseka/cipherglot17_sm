@@ -108,11 +108,8 @@ void ScanRow_E0FD(uint8_t)	;
 //**********************************************************************
 
 void CipherGlot_init(void) {
-//	MX_RTC_Init();
-//	MX_TIM2_Init();
-//	MX_TIM3_Init();
-//	MX_TIM4_Init();
-//	MX_USART1_UART_Init();
+	//	TIM3 - torn off 8-LED indicator
+	//	TIM4 - torn on  prompts
 
 	char DataChar[100];
 	//HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
