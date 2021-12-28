@@ -245,34 +245,34 @@ void CipherGlot_init(void) {
 	sprintf(DataChar,"Init - Ok\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
+	RTC_TimeTypeDef TimeStruct = { 0 }  ;
+	TimeStruct.Hours   = 0;
+	TimeStruct.Minutes = 0;
+	TimeStruct.Seconds = 0;
+	HAL_RTC_SetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
+
+	Generate_New_Cipher();
 	Prompt_Start();
 }
 //**********************************************************************
 
 void CipherGlot_main(void) {
-
-	if (total_cipher_number_u32 == start_cipher_number_u32) {
-		RTC_TimeTypeDef TimeStruct = { 0 }  ;
-		TimeStruct.Hours   = 0;
-		TimeStruct.Minutes = 0;
-		TimeStruct.Seconds = 0;
-		HAL_RTC_SetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
-	}
-
-	Generate_New_Cipher();
+	//Generate_New_Cipher();
+	uint8_t end_of_type_flag = 0;
 
 	{	//debug print time and new cipher
 		RTC_TimeTypeDef _TimeStructLoc = { 0 } ;
 		HAL_RTC_GetTime( &hrtc, &_TimeStructLoc, RTC_FORMAT_BIN );
-		uint8_t hour_u8   = _TimeStructLoc.Hours   ;
-		uint8_t min_u8 = _TimeStructLoc.Minutes ;
-		uint8_t sec_u8  = _TimeStructLoc.Seconds  ;
+		uint8_t hour_u8	= _TimeStructLoc.Hours   ;
+		uint8_t min_u8 	= _TimeStructLoc.Minutes ;
+		uint8_t sec_u8  = _TimeStructLoc.Seconds ;
 
-		sprintf(DataChar," %d:%02d:%02d; \r\n", (int)hour_u8, (int)min_u8, (int)sec_u8);
-		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-
-		sprintf(DataChar," new %X. \r\n", cipher_arr_u8[total_cipher_number_u32]);
-		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+		sprintf(DataChar," %02d:%02d:%02d newCp %X\r\n",
+							(int)hour_u8,
+							(int)min_u8	,
+							(int)sec_u8	,
+							(int)cipher_arr_u8[total_cipher_number_u32] ) ;
+		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100) ;
 	}
 
 	if ((game_type_u8 == 3) && (total_cipher_number_u32 == start_cipher_number_u32) ) {
@@ -306,6 +306,7 @@ void CipherGlot_main(void) {
 	Beeper_12();
 	CipherPrint(cipher_arr_u8[total_cipher_number_u32]);
 	current_cipher_number_u32 = start_cipher_number_u32;
+	end_of_type_flag = 0 ;
 
 	Prompt_Start();
 
@@ -345,7 +346,6 @@ void CipherGlot_main(void) {
 			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 			BeepCipher_OK(cipher_arr_u8[current_cipher_number_u32]);
 			current_cipher_number_u32++;
-
 			Prompt_Set(0);
 		}
 		else {
@@ -355,11 +355,18 @@ void CipherGlot_main(void) {
 			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 			current_cipher_number_u32 = start_cipher_number_u32;
 		}
-	} // do Komp
-	while (current_cipher_number_u32 <= total_cipher_number_u32 );
+
+		if (current_cipher_number_u32 > total_cipher_number_u32 ) {
+			total_cipher_number_u32++;
+			Generate_New_Cipher();
+			end_of_type_flag = 1;
+		}
+	} // do Compare
+	//	while (current_cipher_number_u32 <= total_cipher_number_u32 );
+	while (end_of_type_flag == 0);
 
 	//Prompt_Stop() ;
-	total_cipher_number_u32++;
+	//	total_cipher_number_u32++;
 	sprintf(DataChar," qnt %d;\r\n", (int)(1 + total_cipher_number_u32 - start_cipher_number_u32));
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
@@ -379,8 +386,15 @@ void Generate_New_Cipher (void) {
 		return;
 	}
 
+	RTC_TimeTypeDef timeStruct = { 0 } ;
+	HAL_RTC_GetTime( &hrtc, &timeStruct, RTC_FORMAT_BIN );
+	uint8_t hour_u8	= timeStruct.Hours		;
+	uint8_t  min_u8	= timeStruct.Minutes	;
+	uint8_t  sec_u8	= timeStruct.Seconds	;
+
 	uint8_t 	new_cipher_u8		= 0 ;
 	uint8_t 	new_cipher_status	= 0 ;
+
 	do {
 		new_cipher_u8		= rand()%10 ;
 		new_cipher_status	= 1 		;
@@ -390,12 +404,6 @@ void Generate_New_Cipher (void) {
 	}	while (new_cipher_status == 0) ;
 
 	cipher_arr_u8[total_cipher_number_u32] = new_cipher_u8 ;
-
-	RTC_TimeTypeDef timeStruct = { 0 } ;
-	HAL_RTC_GetTime( &hrtc, &timeStruct, RTC_FORMAT_BIN );
-	uint8_t hour_u8	= timeStruct.Hours		;
-	uint8_t  min_u8	= timeStruct.Minutes	;
-	uint8_t  sec_u8	= timeStruct.Seconds	;
 	cipher_time_arr_u32[total_cipher_number_u32] =  3600*hour_u8 + 60*min_u8 + sec_u8;
 }
 //--------------------------------------------------------------------------
