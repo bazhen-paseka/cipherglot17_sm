@@ -245,6 +245,7 @@ void CipherGlot_init(void) {
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	Prompt_Start();
+	HAL_TIM_Base_Start_IT(&htim1);
 }
 //**********************************************************************
 
@@ -1359,6 +1360,12 @@ void Download_Statistics( uint32_t _startNumb, uint32_t _maxNumb ) {
 	Prompt_Start();
 	current_cipher_number_u32 = start_cipher_number_u32 ;
 	CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+}
+//**********************************************************************
+
+void Bonus(void) {
+	sprintf(DataChar,"_B_\r\n" ) ;
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 }
 //**********************************************************************
 

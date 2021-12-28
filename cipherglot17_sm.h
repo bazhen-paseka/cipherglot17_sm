@@ -26,6 +26,7 @@
 
 	void Prompt_Set(uint8_t new_prompt_u8);
 	void Blank_Set(uint8_t new_blank_u8);
+	void Bonus(void) ;
 
 //**********************************************************************
 
