@@ -933,6 +933,15 @@ void CipherPrint (uint8_t num) {
 		Segment_D(0);
 				Segment_P(1);
 		}
+
+	if (num==0x29) {		// "-"
+		Segment_A(0);
+	Segment_F(0);Segment_B(0);
+		Segment_G(1);
+	Segment_E(0);Segment_C(0);
+		Segment_D(0);
+				Segment_P(0);
+		}
 }
 //**********************************************************************
 
@@ -1185,11 +1194,25 @@ void Show_Time(void) {
 	CipherPrint(0x11);				HAL_Delay(100);
 
 	Beeper_11();
+	CipherPrint(0x29);				HAL_Delay(500);
+
+	Beeper_11();
 	CipherPrint(_stopMin_u8 / 10);	HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(100);
 
 	Beeper_11();
 	CipherPrint(_stopMin_u8 % 10);	HAL_Delay(500);
+	CipherPrint(0x11);				HAL_Delay(100);
+
+	Beeper_11();
+	CipherPrint(0x29);				HAL_Delay(500);
+
+	Beeper_11();
+	CipherPrint(_stopSec_u8 / 10);	HAL_Delay(500);
+	CipherPrint(0x11);				HAL_Delay(100);
+
+	Beeper_11();
+	CipherPrint(_stopSec_u8 % 10);	HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(1000);
 
 	BlankIndicatorStart();
