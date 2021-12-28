@@ -379,92 +379,14 @@ void Generate_New_Cipher (void) {
 		return;
 	}
 
-	uint8_t 	previuos_cipher_u8	= 0 ;
 	uint8_t 	new_cipher_u8		= 0 ;
 	uint8_t 	new_cipher_status	= 0 ;
-
 	do {
-		previuos_cipher_u8	= cipher_arr_u8[total_cipher_number_u32 - 1] ;
 		new_cipher_u8		= rand()%10 ;
 		new_cipher_status	= 1 		;
-
-		if (game_type_u8 == 4) {
-			switch (new_cipher_u8) {
-				case 1:	{	if (	( previuos_cipher_u8 == 2 )
-								||	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 5 ) ) new_cipher_status = 1 ;
-				} break ;
-
-				case 2:	{	if ( 	( previuos_cipher_u8 == 1 )
-								||	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 6 )
-								||	( previuos_cipher_u8 == 3 )	 ) new_cipher_status = 1;
-				} break ;
-
-				case 3:	{	if ( 	( previuos_cipher_u8 == 2 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 6 )	 ) new_cipher_status = 1;
-				} break ;
-
-				case 4 : {	if ( 	( previuos_cipher_u8 == 1 )
-								||	( previuos_cipher_u8 == 2 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 7 )	 ) new_cipher_status = 1;
-				} break ;
-
-				case 5 : {	if ( 	( previuos_cipher_u8 == 1 )
-								||	( previuos_cipher_u8 == 2 )
-								||	( previuos_cipher_u8 == 3 )
-								||	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 6 )
-								||	( previuos_cipher_u8 == 7 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 9 )	 ) new_cipher_status = 1;
-				} break ;
-
-				case 6 : {	if ( 	( previuos_cipher_u8 == 3 )
-								||	( previuos_cipher_u8 == 2 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 9 )	 ) new_cipher_status = 1;
-				} break ;
-
-				case 7 : {	if ( 	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 0 )	 ) new_cipher_status = 1;
-				} break ;
-
-				case 8 : {	if ( 	( previuos_cipher_u8 == 7 )
-								||	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 6 )
-								||	( previuos_cipher_u8 == 9 )
-								||	( previuos_cipher_u8 == 0 )	 ) new_cipher_status = 1;
-				} break ;
-
-				case 9 : {	if ( 	( previuos_cipher_u8 == 0 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 6 )	 ) new_cipher_status = 1;
-				} break ;
-
-				case 0 : {	if ( 	( previuos_cipher_u8 == 7 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 9 )	 ) new_cipher_status = 1;
-				} break ;
-
-				default : {		new_cipher_status = 0;
-				} break ;
-			}
-		}	//	if (game_type_u8 == 4)
-
 		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 1])	new_cipher_status = 0 ;
 		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 2])	new_cipher_status = 0 ;
 		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 3])	new_cipher_status = 0 ;
-
 	}	while (new_cipher_status == 0) ;
 
 	cipher_arr_u8[total_cipher_number_u32] = new_cipher_u8 ;
