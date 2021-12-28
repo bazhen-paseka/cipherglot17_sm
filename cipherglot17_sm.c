@@ -359,6 +359,28 @@ void CipherGlot_main(void) {
 		if (current_cipher_number_u32 > total_cipher_number_u32 ) {
 			total_cipher_number_u32++;
 			Generate_New_Cipher();
+			Bonus_Start();
+			uint8_t current_key_bonus = KeyPressed();
+			Bonus_Stop() ;
+			if (current_key_bonus != 0xF1) {
+				if ( current_key_bonus == cipher_arr_u8[current_cipher_number_u32]) {
+					// MAGIC
+					sprintf(DataChar," MAGIC\r\n");
+					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+					CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+					BeepCipher_OK(cipher_arr_u8[current_cipher_number_u32]);
+					Prompt_Set(0);
+				} else {
+					 cipher_arr_u8[current_cipher_number_u32] = current_key_bonus ;
+					 CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+						sprintf(DataChar," Forse Set Cp: %d \r\n", current_key_bonus);
+						HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+					 BeepCipher_OK(cipher_arr_u8[current_cipher_number_u32]);
+					 HAL_Delay(100);
+					 BeepCipher_OK(cipher_arr_u8[current_cipher_number_u32]);
+					 Prompt_Set(0);
+				}
+			}
 			end_of_type_flag = 1;
 		}
 	} // do Compare
@@ -402,6 +424,9 @@ void Generate_New_Cipher (void) {
 		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 2])	new_cipher_status = 0 ;
 		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 3])	new_cipher_status = 0 ;
 	}	while (new_cipher_status == 0) ;
+
+	sprintf(DataChar,"NEW_Cp: %d\r\n", new_cipher_u8 );
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	cipher_arr_u8[total_cipher_number_u32] = new_cipher_u8 ;
 	cipher_time_arr_u32[total_cipher_number_u32] =  3600*hour_u8 + 60*min_u8 + sec_u8;
@@ -462,6 +487,12 @@ uint8_t ScanKeyBoard(void) {
 		if (KEYBOARD_COLUMN_3_GPIO_Port->IDR & KEYBOARD_COLUMN_3_IDR) keyboard_u8 =0x0F;
 		if (KEYBOARD_COLUMN_A_GPIO_Port->IDR & KEYBOARD_COLUMN_A_IDR) keyboard_u8 =0x0D;
 		ScanRow_E0FD(0);
+		if (Bonus_Status() == 1 ) {
+			Bonus_Stop() ;
+			Bonus_Set(0) ;
+			return 0xF1 ;
+		}
+
 		}
 	while (keyboard_u8 == 0xFF);
 	return keyboard_u8;
@@ -960,8 +991,11 @@ uint8_t KeyPressed(void) {
 		HAL_Delay(20);
 		blank_u8 = 0;
 		key2_u8 = ScanKeyBoard();
+		if ((key1_u8 == 0xF1) || (key2_u8 == 0xF1)) {
+			return 0xF1 ;
+		}
 	}
-	while (key1_u8 != key2_u8);
+	while (key1_u8 != key2_u8) ;
 
 	return key1_u8;
 }
@@ -1299,16 +1333,22 @@ void Download_Statistics( uint32_t _startNumb, uint32_t _maxNumb ) {
 void Bonus_Start(void) {
 	TIM4->CNT = 0 ;
 	HAL_TIM_Base_Start_IT(&htim1);
+	sprintf(DataChar," Bonus-Start\r\n");
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 }
 //**********************************************************************
 
 void Bonus_Stop(void) {
 	HAL_TIM_Base_Stop_IT(&htim1);
+	sprintf(DataChar," Bonus-Stop\r\n");
+		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 }
 //**********************************************************************
 
 void Bonus_Set(uint8_t _bonus_status) {
 	bonus_u8 = _bonus_status;
+	sprintf(DataChar," Bonus-Set: %d\r\n", _bonus_status);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 }
 //**********************************************************************
 
