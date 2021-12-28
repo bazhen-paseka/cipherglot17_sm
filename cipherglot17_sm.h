@@ -21,12 +21,16 @@
 
 //**********************************************************************
 
-	void CipherGlot_init(void);
-	void CipherGlot_main(void);
+	void 	CipherGlot_init	(void);
+	void 	CipherGlot_main	(void);
 
-	void Prompt_Set(uint8_t new_prompt_u8);
-	void Blank_Set(uint8_t new_blank_u8);
-	void Bonus(void) ;
+	void 	Prompt_Set		(uint8_t new_prompt_u8);
+	void 	Blank_Set		(uint8_t new_blank_u8);
+
+	void 	Bonus_Start		(void) ;
+	void 	Bonus_Stop		(void) ;
+	void 	Bonus_Set		(uint8_t _status_u8) ;
+	uint8_t	Bonus_Status	(void) ;
 
 //**********************************************************************
 

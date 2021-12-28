@@ -49,6 +49,7 @@ uint8_t cipher_arr_u8[END_NUMBER] = {3,
 
 uint32_t cipher_time_arr_u32 [END_NUMBER] = { 0 } ;
 
+uint8_t bonus_u8					= 0 ;
 uint8_t blank_u8 					= 0 ;
 uint8_t prompt_u8 					= 0 ;
 uint8_t game_type_u8				= 0 ; // Pi, 4 or Old
@@ -245,7 +246,6 @@ void CipherGlot_init(void) {
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	Prompt_Start();
-	HAL_TIM_Base_Start_IT(&htim1);
 }
 //**********************************************************************
 
@@ -1363,9 +1363,23 @@ void Download_Statistics( uint32_t _startNumb, uint32_t _maxNumb ) {
 }
 //**********************************************************************
 
-void Bonus(void) {
-	sprintf(DataChar,"_B_\r\n" ) ;
-	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+void Bonus_Start(void) {
+	TIM4->CNT = 0 ;
+	HAL_TIM_Base_Start_IT(&htim1);
 }
 //**********************************************************************
 
+void Bonus_Stop(void) {
+	HAL_TIM_Base_Stop_IT(&htim1);
+}
+//**********************************************************************
+
+void Bonus_Set(uint8_t _status_u8) {
+	bonus_u8 = _status_u8;
+}
+//**********************************************************************
+
+uint8_t Bonus_Status(void) {
+	return bonus_u8;
+}
+//**********************************************************************
