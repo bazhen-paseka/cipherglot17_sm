@@ -379,38 +379,39 @@ void Generate_New_Cipher (void) {
 		return;
 	}
 
-	uint8_t status_u8 = 0;
-	do {
-		status_u8 = 1;
-		uint8_t 	new_cipher_u8 = rand()%10;
-		uint8_t 	previuos_cipher_u8 = cipher_arr_u8[total_cipher_number_u32 - 1] ;
+	uint8_t 	previuos_cipher_u8	= 0 ;
+	uint8_t 	new_cipher_u8		= 0 ;
+	uint8_t 	new_cipher_status	= 0 ;
 
-		cipher_arr_u8[total_cipher_number_u32] = new_cipher_u8 ;
+	do {
+		previuos_cipher_u8	= cipher_arr_u8[total_cipher_number_u32 - 1] ;
+		new_cipher_u8		= rand()%10 ;
+		new_cipher_status	= 1 		;
 
 		if (game_type_u8 == 4) {
 			switch (new_cipher_u8) {
 				case 1:	{	if (	( previuos_cipher_u8 == 2 )
 								||	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 5 ) ) status_u8 = 1 ;
+								||	( previuos_cipher_u8 == 5 ) ) new_cipher_status = 1 ;
 				} break ;
 
 				case 2:	{	if ( 	( previuos_cipher_u8 == 1 )
 								||	( previuos_cipher_u8 == 4 )
 								||	( previuos_cipher_u8 == 5 )
 								||	( previuos_cipher_u8 == 6 )
-								||	( previuos_cipher_u8 == 3 )	 ) status_u8 = 1;
+								||	( previuos_cipher_u8 == 3 )	 ) new_cipher_status = 1;
 				} break ;
 
 				case 3:	{	if ( 	( previuos_cipher_u8 == 2 )
 								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 6 )	 ) status_u8 = 1;
+								||	( previuos_cipher_u8 == 6 )	 ) new_cipher_status = 1;
 				} break ;
 
 				case 4 : {	if ( 	( previuos_cipher_u8 == 1 )
 								||	( previuos_cipher_u8 == 2 )
 								||	( previuos_cipher_u8 == 5 )
 								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 7 )	 ) status_u8 = 1;
+								||	( previuos_cipher_u8 == 7 )	 ) new_cipher_status = 1;
 				} break ;
 
 				case 5 : {	if ( 	( previuos_cipher_u8 == 1 )
@@ -420,20 +421,20 @@ void Generate_New_Cipher (void) {
 								||	( previuos_cipher_u8 == 6 )
 								||	( previuos_cipher_u8 == 7 )
 								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 9 )	 ) status_u8 = 1;
+								||	( previuos_cipher_u8 == 9 )	 ) new_cipher_status = 1;
 				} break ;
 
 				case 6 : {	if ( 	( previuos_cipher_u8 == 3 )
 								||	( previuos_cipher_u8 == 2 )
 								||	( previuos_cipher_u8 == 5 )
 								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 9 )	 ) status_u8 = 1;
+								||	( previuos_cipher_u8 == 9 )	 ) new_cipher_status = 1;
 				} break ;
 
 				case 7 : {	if ( 	( previuos_cipher_u8 == 4 )
 								||	( previuos_cipher_u8 == 5 )
 								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 0 )	 ) status_u8 = 1;
+								||	( previuos_cipher_u8 == 0 )	 ) new_cipher_status = 1;
 				} break ;
 
 				case 8 : {	if ( 	( previuos_cipher_u8 == 7 )
@@ -441,30 +442,32 @@ void Generate_New_Cipher (void) {
 								||	( previuos_cipher_u8 == 5 )
 								||	( previuos_cipher_u8 == 6 )
 								||	( previuos_cipher_u8 == 9 )
-								||	( previuos_cipher_u8 == 0 )	 ) status_u8 = 1;
+								||	( previuos_cipher_u8 == 0 )	 ) new_cipher_status = 1;
 				} break ;
 
 				case 9 : {	if ( 	( previuos_cipher_u8 == 0 )
 								||	( previuos_cipher_u8 == 8 )
 								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 6 )	 ) status_u8 = 1;
+								||	( previuos_cipher_u8 == 6 )	 ) new_cipher_status = 1;
 				} break ;
 
 				case 0 : {	if ( 	( previuos_cipher_u8 == 7 )
 								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 9 )	 ) status_u8 = 1;
+								||	( previuos_cipher_u8 == 9 )	 ) new_cipher_status = 1;
 				} break ;
 
-				default : {		status_u8 = 0;
+				default : {		new_cipher_status = 0;
 				} break ;
 			}
 		}	//	if (game_type_u8 == 4)
 
-		if (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 1])	status_u8 = 0 ;
-		if (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 2])	status_u8 = 0 ;
-		if (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 3])	status_u8 = 0 ;
+		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 1])	new_cipher_status = 0 ;
+		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 2])	new_cipher_status = 0 ;
+		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 3])	new_cipher_status = 0 ;
 
-	}	while (status_u8 == 0) ;
+	}	while (new_cipher_status == 0) ;
+
+	cipher_arr_u8[total_cipher_number_u32] = new_cipher_u8 ;
 
 	RTC_TimeTypeDef timeStruct = { 0 } ;
 	HAL_RTC_GetTime( &hrtc, &timeStruct, RTC_FORMAT_BIN );
@@ -1374,8 +1377,8 @@ void Bonus_Stop(void) {
 }
 //**********************************************************************
 
-void Bonus_Set(uint8_t _status_u8) {
-	bonus_u8 = _status_u8;
+void Bonus_Set(uint8_t _bonus_status) {
+	bonus_u8 = _bonus_status;
 }
 //**********************************************************************
 
