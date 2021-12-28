@@ -22,7 +22,8 @@
 
 //**********************************************************************
 
-#define END_NUMBER 1024
+#define BONUS_CHAR	0xF1
+#define END_NUMBER	1024
 	char DataChar[0xFF];
 uint8_t cipher_arr_u8[END_NUMBER] = {3,
 	1,4,1,5,9,2,6,5,3,5,8,9,7,9,3,2,3,8,4,6,2,6,4,3,3,8,3,2,7,9,5,0,2,8,8,4,1,9,7,1,6,9,3,9,9,3,7,5,1,0,
@@ -49,6 +50,7 @@ uint8_t cipher_arr_u8[END_NUMBER] = {3,
 
 uint32_t cipher_time_arr_u32 [END_NUMBER] = { 0 } ;
 
+uint8_t bonus_u8					= 0 ;
 uint8_t blank_u8 					= 0 ;
 uint8_t prompt_u8 					= 0 ;
 uint8_t game_type_u8				= 0 ; // Pi, 4 or Old
@@ -244,34 +246,34 @@ void CipherGlot_init(void) {
 	sprintf(DataChar,"Init - Ok\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
+	RTC_TimeTypeDef TimeStruct = { 0 }  ;
+	TimeStruct.Hours   = 0;
+	TimeStruct.Minutes = 0;
+	TimeStruct.Seconds = 0;
+	HAL_RTC_SetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
+
+	Generate_New_Cipher();
 	Prompt_Start();
 }
 //**********************************************************************
 
 void CipherGlot_main(void) {
-
-	if (total_cipher_number_u32 == start_cipher_number_u32) {
-		RTC_TimeTypeDef TimeStruct = { 0 }  ;
-		TimeStruct.Hours   = 0;
-		TimeStruct.Minutes = 0;
-		TimeStruct.Seconds = 0;
-		HAL_RTC_SetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
-	}
-
-	Generate_New_Cipher();
+	//Generate_New_Cipher();
+	uint8_t end_of_type_flag = 0;
 
 	{	//debug print time and new cipher
 		RTC_TimeTypeDef _TimeStructLoc = { 0 } ;
 		HAL_RTC_GetTime( &hrtc, &_TimeStructLoc, RTC_FORMAT_BIN );
-		uint8_t hour_u8   = _TimeStructLoc.Hours   ;
-		uint8_t min_u8 = _TimeStructLoc.Minutes ;
-		uint8_t sec_u8  = _TimeStructLoc.Seconds  ;
+		uint8_t hour_u8	= _TimeStructLoc.Hours   ;
+		uint8_t min_u8 	= _TimeStructLoc.Minutes ;
+		uint8_t sec_u8  = _TimeStructLoc.Seconds ;
 
-		sprintf(DataChar," %d:%02d:%02d; \r\n", (int)hour_u8, (int)min_u8, (int)sec_u8);
-		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-
-		sprintf(DataChar," new %X. \r\n", cipher_arr_u8[total_cipher_number_u32]);
-		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+		sprintf(DataChar,"\r\n%02d:%02d:%02d newCp %X\r\n",
+							(int)hour_u8,
+							(int)min_u8	,
+							(int)sec_u8	,
+							(int)cipher_arr_u8[total_cipher_number_u32] ) ;
+		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100) ;
 	}
 
 	if ((game_type_u8 == 3) && (total_cipher_number_u32 == start_cipher_number_u32) ) {
@@ -305,8 +307,7 @@ void CipherGlot_main(void) {
 	Beeper_12();
 	CipherPrint(cipher_arr_u8[total_cipher_number_u32]);
 	current_cipher_number_u32 = start_cipher_number_u32;
-
-	Prompt_Start();
+	end_of_type_flag = 0 ;
 
 	do {  // Compare
 		Prompt_Start();
@@ -344,21 +345,65 @@ void CipherGlot_main(void) {
 			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 			BeepCipher_OK(cipher_arr_u8[current_cipher_number_u32]);
 			current_cipher_number_u32++;
-
 			Prompt_Set(0);
 		}
 		else {
-			sprintf(DataChar," Error\r\n");
+			sprintf(DataChar,"\r\nError\r\n");
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 			BeepError2();
 			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 			current_cipher_number_u32 = start_cipher_number_u32;
 		}
-	} // do Komp
-	while (current_cipher_number_u32 <= total_cipher_number_u32 );
+
+		if (current_cipher_number_u32 > total_cipher_number_u32 ) {
+			total_cipher_number_u32++;
+			Generate_New_Cipher();
+			Bonus_Start();
+			uint8_t current_key_bonus = KeyPressed();
+			Bonus_Stop() ;
+			if (current_key_bonus != BONUS_CHAR) {
+				if ( current_key_bonus == cipher_arr_u8[current_cipher_number_u32]) {
+					sprintf(DataChar,"\r\nMAGIC cipher: %d\r\n", current_key_bonus);
+					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+					CipherPrint(0x31);
+					BeepCipher_OK(0);
+					HAL_Delay(200);
+					CipherPrint(0x29);
+					BeepCipher_OK(0);
+					HAL_Delay(200);
+					CipherPrint(0x30);
+					BeepCipher_OK(0);
+					HAL_Delay(200);
+					CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+					BeepCipher_OK(0);
+					HAL_Delay(200);
+				} else {
+					cipher_arr_u8[current_cipher_number_u32] = current_key_bonus ;
+					sprintf(DataChar,"\r\nForse set cipher: %d \r\n", current_key_bonus);
+					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+					CipherPrint(0x30);
+					BeepCipher_OK(0);
+					HAL_Delay(200);
+					CipherPrint(0x29);
+					BeepCipher_OK(0);
+					HAL_Delay(200);
+					CipherPrint(0x31);
+					BeepCipher_OK(0);
+					HAL_Delay(200);
+					CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+					BeepCipher_OK(0);
+					HAL_Delay(200);
+				}
+			}
+			Prompt_Set(0);
+			end_of_type_flag = 1;
+		}
+	} // do Compare
+	//	while (current_cipher_number_u32 <= total_cipher_number_u32 );
+	while (end_of_type_flag == 0);
 
 	//Prompt_Stop() ;
-	total_cipher_number_u32++;
+	//	total_cipher_number_u32++;
 	sprintf(DataChar," qnt %d;\r\n", (int)(1 + total_cipher_number_u32 - start_cipher_number_u32));
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
@@ -378,98 +423,27 @@ void Generate_New_Cipher (void) {
 		return;
 	}
 
-	uint8_t status_u8 = 0;
-	do {
-		status_u8 = 1;
-		uint8_t 	new_cipher_u8 = rand()%10;
-		uint8_t 	previuos_cipher_u8 = cipher_arr_u8[total_cipher_number_u32 - 1] ;
-
-		cipher_arr_u8[total_cipher_number_u32] = new_cipher_u8 ;
-
-		if (game_type_u8 == 4) {
-			switch (new_cipher_u8) {
-				case 1:	{	if (	( previuos_cipher_u8 == 2 )
-								||	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 5 ) ) status_u8 = 1 ;
-				} break ;
-
-				case 2:	{	if ( 	( previuos_cipher_u8 == 1 )
-								||	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 6 )
-								||	( previuos_cipher_u8 == 3 )	 ) status_u8 = 1;
-				} break ;
-
-				case 3:	{	if ( 	( previuos_cipher_u8 == 2 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 6 )	 ) status_u8 = 1;
-				} break ;
-
-				case 4 : {	if ( 	( previuos_cipher_u8 == 1 )
-								||	( previuos_cipher_u8 == 2 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 7 )	 ) status_u8 = 1;
-				} break ;
-
-				case 5 : {	if ( 	( previuos_cipher_u8 == 1 )
-								||	( previuos_cipher_u8 == 2 )
-								||	( previuos_cipher_u8 == 3 )
-								||	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 6 )
-								||	( previuos_cipher_u8 == 7 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 9 )	 ) status_u8 = 1;
-				} break ;
-
-				case 6 : {	if ( 	( previuos_cipher_u8 == 3 )
-								||	( previuos_cipher_u8 == 2 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 9 )	 ) status_u8 = 1;
-				} break ;
-
-				case 7 : {	if ( 	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 0 )	 ) status_u8 = 1;
-				} break ;
-
-				case 8 : {	if ( 	( previuos_cipher_u8 == 7 )
-								||	( previuos_cipher_u8 == 4 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 6 )
-								||	( previuos_cipher_u8 == 9 )
-								||	( previuos_cipher_u8 == 0 )	 ) status_u8 = 1;
-				} break ;
-
-				case 9 : {	if ( 	( previuos_cipher_u8 == 0 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 5 )
-								||	( previuos_cipher_u8 == 6 )	 ) status_u8 = 1;
-				} break ;
-
-				case 0 : {	if ( 	( previuos_cipher_u8 == 7 )
-								||	( previuos_cipher_u8 == 8 )
-								||	( previuos_cipher_u8 == 9 )	 ) status_u8 = 1;
-				} break ;
-
-				default : {		status_u8 = 0;
-				} break ;
-			}
-		}	//	if (game_type_u8 == 4)
-
-		if (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 1])	status_u8 = 0 ;
-		if (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 2])	status_u8 = 0 ;
-		if (cipher_arr_u8[total_cipher_number_u32] == cipher_arr_u8[total_cipher_number_u32 - 3])	status_u8 = 0 ;
-
-	}	while (status_u8 == 0) ;
-
 	RTC_TimeTypeDef timeStruct = { 0 } ;
 	HAL_RTC_GetTime( &hrtc, &timeStruct, RTC_FORMAT_BIN );
 	uint8_t hour_u8	= timeStruct.Hours		;
 	uint8_t  min_u8	= timeStruct.Minutes	;
 	uint8_t  sec_u8	= timeStruct.Seconds	;
+
+	uint8_t 	new_cipher_u8		= 0 ;
+	uint8_t 	new_cipher_status	= 0 ;
+
+	do {
+		new_cipher_u8		= rand()%10 ;
+		new_cipher_status	= 1 		;
+		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 1])	new_cipher_status = 0 ;
+		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 2])	new_cipher_status = 0 ;
+		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 3])	new_cipher_status = 0 ;
+	}	while (new_cipher_status == 0) ;
+
+	sprintf(DataChar,"\r\nnew_cipher: %d\r\n", new_cipher_u8 );
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	cipher_arr_u8[total_cipher_number_u32] = new_cipher_u8 ;
 	cipher_time_arr_u32[total_cipher_number_u32] =  3600*hour_u8 + 60*min_u8 + sec_u8;
 }
 //--------------------------------------------------------------------------
@@ -483,7 +457,7 @@ uint8_t ScanKeyBoard(void) {
 		if (Prompt_Status() == 1 ) {
 			if (previous_cipher_u8 != cipher_arr_u8[current_cipher_number_u32]) {
 				char DataChar[100];
-				sprintf(DataChar," hint: %X\r\n", (int)cipher_arr_u8[current_cipher_number_u32]);
+				sprintf(DataChar," prompt: %X\r\n", (int)cipher_arr_u8[current_cipher_number_u32]);
 				HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 				previous_cipher_u8 = cipher_arr_u8[current_cipher_number_u32];
 			}
@@ -494,9 +468,9 @@ uint8_t ScanKeyBoard(void) {
 			Prompt_Set(0);
 		}
 
-		if (blank_u8 == 1) {
+		if (Blank_Status() == 1) {
 			CipherPrint(0x11) ; // blank
-			blank_u8 = 0;
+			Blank_Set(0);
 		}
 		rand();
 		keyboard_u8 = 0xFF;
@@ -528,8 +502,14 @@ uint8_t ScanKeyBoard(void) {
 		if (KEYBOARD_COLUMN_3_GPIO_Port->IDR & KEYBOARD_COLUMN_3_IDR) keyboard_u8 =0x0F;
 		if (KEYBOARD_COLUMN_A_GPIO_Port->IDR & KEYBOARD_COLUMN_A_IDR) keyboard_u8 =0x0D;
 		ScanRow_E0FD(0);
+
+		if (Bonus_Status() == 1 ) {
+			Bonus_Stop() ;
+			Bonus_Set(0) ;
+			return BONUS_CHAR ;
 		}
-	while (keyboard_u8 == 0xFF);
+
+	} while (keyboard_u8 == 0xFF);
 	return keyboard_u8;
 }
 //**********************************************************************
@@ -971,6 +951,33 @@ void CipherPrint (uint8_t num) {
 		Segment_D(0);
 				Segment_P(1);
 		}
+
+	if (num==0x29) {		// "-"
+		Segment_A(0);
+	Segment_F(0);Segment_B(0);
+		Segment_G(1);
+	Segment_E(0);Segment_C(0);
+		Segment_D(0);
+				Segment_P(0);
+		}
+
+	if (num==0x30) {		// "^"
+		Segment_A(1);
+	Segment_F(0);Segment_B(0);
+		Segment_G(0);
+	Segment_E(0);Segment_C(0);
+		Segment_D(0);
+				Segment_P(0);
+		}
+
+	if (num==0x31) {		// "_"
+		Segment_A(0);
+	Segment_F(0);Segment_B(0);
+		Segment_G(0);
+	Segment_E(0);Segment_C(0);
+		Segment_D(1);
+				Segment_P(0);
+		}
 }
 //**********************************************************************
 
@@ -1021,13 +1028,19 @@ uint8_t KeyPressed(void) {
 	uint8_t key2_u8;
 
 	do { // KeyPresseed
-		blank_u8 = 0;
+		Blank_Set(0);
 		key1_u8 = ScanKeyBoard();
+		if (key1_u8 == BONUS_CHAR) {
+			return BONUS_CHAR ;
+		}
 		HAL_Delay(20);
-		blank_u8 = 0;
+		Blank_Set(0);
 		key2_u8 = ScanKeyBoard();
+		if (key2_u8 == BONUS_CHAR) {
+			return BONUS_CHAR ;
+		}
 	}
-	while (key1_u8 != key2_u8);
+	while (key1_u8 != key2_u8) ;
 
 	return key1_u8;
 }
@@ -1123,6 +1136,7 @@ void BeepError3(void) {
 //**********************************************************************
 
 void BlankIndicatorStart (void) {
+	TIM3->CNT = 0;
 	HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
 }
 //**********************************************************************
@@ -1137,6 +1151,10 @@ void Blank_Set(uint8_t new_blank_u8) {
 }
 //**********************************************************************
 
+uint8_t Blank_Status(void) {
+	return blank_u8 ;
+}
+//**********************************************************************
 void Prompt_Start (void) {
 	TIM4->CNT = 0;
 	HAL_TIM_Base_Start_IT(&htim4) ; // start TIM4 prompt
@@ -1162,7 +1180,7 @@ uint8_t Prompt_Status(void) {
 void Show_QNT(uint32_t _startNumb, uint32_t _maxNumb) {
 	uint32_t cipher_QNT_u32 = _maxNumb + 1 - _startNumb;
 	char DataChar[100];
-	sprintf(DataChar," QNT: %d\r\n", (int)cipher_QNT_u32);
+	sprintf(DataChar,"\r\nQNT: %d\r\n", (int)cipher_QNT_u32);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 	Prompt_Stop();
 	BlankIndicatorStop();
@@ -1200,7 +1218,7 @@ void Show_Time(void) {
 	uint8_t _stopMin_u8 	= TimeStruct.Minutes ;
 	uint8_t _stopSec_u8  	= TimeStruct.Seconds  ;
 
-	sprintf(DataChar," Time %d:%02d:%02d\r\n", (int)_stopHour_u8, (int)_stopMin_u8, (int)_stopSec_u8);
+	sprintf(DataChar,"\r\nTime %d:%02d:%02d\r\n", (int)_stopHour_u8, (int)_stopMin_u8, (int)_stopSec_u8);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	Beeper_12();
@@ -1212,11 +1230,25 @@ void Show_Time(void) {
 	CipherPrint(0x11);				HAL_Delay(100);
 
 	Beeper_11();
+	CipherPrint(0x29);				HAL_Delay(500);
+
+	Beeper_11();
 	CipherPrint(_stopMin_u8 / 10);	HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(100);
 
 	Beeper_11();
 	CipherPrint(_stopMin_u8 % 10);	HAL_Delay(500);
+	CipherPrint(0x11);				HAL_Delay(100);
+
+	Beeper_11();
+	CipherPrint(0x29);				HAL_Delay(500);
+
+	Beeper_11();
+	CipherPrint(_stopSec_u8 / 10);	HAL_Delay(500);
+	CipherPrint(0x11);				HAL_Delay(100);
+
+	Beeper_11();
+	CipherPrint(_stopSec_u8 % 10);	HAL_Delay(500);
 	CipherPrint(0x11);				HAL_Delay(1000);
 
 	BlankIndicatorStart();
@@ -1362,3 +1394,24 @@ void Download_Statistics( uint32_t _startNumb, uint32_t _maxNumb ) {
 }
 //**********************************************************************
 
+void Bonus_Start(void) {
+	TIM1->CNT = 0 ;
+	HAL_TIM_Base_Start_IT(&htim1);
+}
+//**********************************************************************
+
+void Bonus_Stop(void) {
+	HAL_TIM_Base_Stop_IT(&htim1);
+
+}
+//**********************************************************************
+
+void Bonus_Set(uint8_t _bonus_status) {
+	bonus_u8 = _bonus_status;
+}
+//**********************************************************************
+
+uint8_t Bonus_Status(void) {
+	return bonus_u8;
+}
+//**********************************************************************
