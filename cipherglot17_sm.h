@@ -24,8 +24,8 @@
 	void CipherGlot_init(void);
 	void CipherGlot_main(void);
 
-	void set_Prompt(uint8_t new_prompt_u8);
-	void set_Blank(uint8_t new_blank_u8);
+	void Prompt_Set(uint8_t new_prompt_u8);
+	void Blank_Set(uint8_t new_blank_u8);
 
 //**********************************************************************
 
