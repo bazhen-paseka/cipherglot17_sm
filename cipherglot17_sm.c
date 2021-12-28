@@ -309,11 +309,6 @@ void CipherGlot_main(void) {
 	current_cipher_number_u32 = start_cipher_number_u32;
 	end_of_type_flag = 0 ;
 
-	sprintf(DataChar," start main DO \r\n");
-	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-
-//	Prompt_Start();
-
 	do {  // Compare
 		Prompt_Start();
 		sprintf(DataChar," %X", (int)cipher_arr_u8[current_cipher_number_u32]);	// hint current Cipher
@@ -368,14 +363,14 @@ void CipherGlot_main(void) {
 			Bonus_Stop() ;
 			if (current_key_bonus != BONUS_CHAR) {
 				if ( current_key_bonus == cipher_arr_u8[current_cipher_number_u32]) {
-						sprintf(DataChar," MAGIC %d\r\n", current_key_bonus);
+						sprintf(DataChar,"\r\nMAGIC cipher: %d\r\n", current_key_bonus);
 						HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 					CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 					BeepCipher_OK(cipher_arr_u8[current_cipher_number_u32]);
 				} else {
 					cipher_arr_u8[current_cipher_number_u32] = current_key_bonus ;
 					CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
-						sprintf(DataChar," Forse Set Cp: %d \r\n", current_key_bonus);
+						sprintf(DataChar,"\r\nForse set cipher: %d \r\n", current_key_bonus);
 						HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 					BeepCipher_OK(cipher_arr_u8[current_cipher_number_u32]);
 					HAL_Delay(100);
@@ -427,7 +422,7 @@ void Generate_New_Cipher (void) {
 		if (new_cipher_u8 == cipher_arr_u8[total_cipher_number_u32 - 3])	new_cipher_status = 0 ;
 	}	while (new_cipher_status == 0) ;
 
-	sprintf(DataChar,"NEW_Cp: %d\r\n", new_cipher_u8 );
+	sprintf(DataChar,"\r\nnew_cipher: %d\r\n", new_cipher_u8 );
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	cipher_arr_u8[total_cipher_number_u32] = new_cipher_u8 ;
@@ -493,8 +488,6 @@ uint8_t ScanKeyBoard(void) {
 		if (Bonus_Status() == 1 ) {
 			Bonus_Stop() ;
 			Bonus_Set(0) ;
-			sprintf(DataChar," 1R) ScanKeyBoard return BONUS_CHAR \r\n" );
-			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 			return BONUS_CHAR ;
 		}
 
@@ -993,16 +986,12 @@ uint8_t KeyPressed(void) {
 		Blank_Set(0);
 		key1_u8 = ScanKeyBoard();
 		if (key1_u8 == BONUS_CHAR) {
-			sprintf(DataChar," 2R1) KeyPressed return BONUS_CHAR \r\n" );
-			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 			return BONUS_CHAR ;
 		}
 		HAL_Delay(20);
 		Blank_Set(0);
 		key2_u8 = ScanKeyBoard();
 		if (key2_u8 == BONUS_CHAR) {
-			sprintf(DataChar," 2R2) KeyPressed return BONUS_CHAR \r\n" );
-			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 			return BONUS_CHAR ;
 		}
 	}
@@ -1102,6 +1091,7 @@ void BeepError3(void) {
 //**********************************************************************
 
 void BlankIndicatorStart (void) {
+	TIM3->CNT = 0;
 	HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
 }
 //**********************************************************************
@@ -1346,24 +1336,19 @@ void Download_Statistics( uint32_t _startNumb, uint32_t _maxNumb ) {
 //**********************************************************************
 
 void Bonus_Start(void) {
-	TIM4->CNT = 0 ;
+	TIM1->CNT = 0 ;
 	HAL_TIM_Base_Start_IT(&htim1);
-	sprintf(DataChar," Bonus-Start\r\n");
-	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 }
 //**********************************************************************
 
 void Bonus_Stop(void) {
 	HAL_TIM_Base_Stop_IT(&htim1);
-	sprintf(DataChar," Bonus-Stop\r\n");
-		HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
 }
 //**********************************************************************
 
 void Bonus_Set(uint8_t _bonus_status) {
 	bonus_u8 = _bonus_status;
-	sprintf(DataChar," Bonus-Set: %d\r\n", _bonus_status);
-	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 }
 //**********************************************************************
 
