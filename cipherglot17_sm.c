@@ -23,7 +23,7 @@
 //**********************************************************************
 
 #define END_NUMBER 1024
-
+	char DataChar[0xFF];
 uint8_t cipher_arr_u8[END_NUMBER] = {3,
 	1,4,1,5,9,2,6,5,3,5,8,9,7,9,3,2,3,8,4,6,2,6,4,3,3,8,3,2,7,9,5,0,2,8,8,4,1,9,7,1,6,9,3,9,9,3,7,5,1,0,
 	5,8,2,0,9,7,4,9,4,4,5,9,2,3,0,7,8,1,6,4,0,6,2,8,6,2,0,8,9,9,8,6,2,8,0,3,4,8,2,5,3,4,2,1,1,7,0,6,7,9,
@@ -111,8 +111,6 @@ void CipherGlot_init(void) {
 	//	TIM3 - torn off 8-LED indicator
 	//	TIM4 - torn on  prompts
 
-	char DataChar[100];
-	//HAL_TIM_Base_Start_IT(&htim3); // start TIM3 interupt
 	BlankIndicatorStart();
 
 	int soft_version_arr_int[3];
@@ -251,7 +249,7 @@ void CipherGlot_init(void) {
 //**********************************************************************
 
 void CipherGlot_main(void) {
-	char DataChar[100];
+
 	if (total_cipher_number_u32 == start_cipher_number_u32) {
 		RTC_TimeTypeDef TimeStruct = { 0 }  ;
 		TimeStruct.Hours   = 0;
@@ -308,8 +306,6 @@ void CipherGlot_main(void) {
 	CipherPrint(cipher_arr_u8[total_cipher_number_u32]);
 	current_cipher_number_u32 = start_cipher_number_u32;
 
-	TIM4->CNT = 0;
-	HAL_TIM_Base_Start_IT(&htim4);
 	Prompt_Start();
 
 	do {  // Compare
@@ -349,8 +345,7 @@ void CipherGlot_main(void) {
 			BeepCipher_OK(cipher_arr_u8[current_cipher_number_u32]);
 			current_cipher_number_u32++;
 
-			TIM4->CNT = 0;
-			set_Prompt(0);
+			Prompt_Set(0);
 		}
 		else {
 			sprintf(DataChar," Error\r\n");
@@ -481,9 +476,7 @@ void Generate_New_Cipher (void) {
 
 uint8_t ScanKeyBoard(void) {
 	uint8_t keyboard_u8;
-
-	TIM4->CNT = 0;
-	set_Prompt(0);
+	Prompt_Set(0);
 
 	static uint8_t previous_cipher_u8;
 	do {
@@ -498,8 +491,7 @@ uint8_t ScanKeyBoard(void) {
 			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
 			HAL_Delay(200);
 			CipherPrint(0x11);
-			set_Prompt(0);
-			TIM4->CNT = 0;
+			Prompt_Set(0);
 		}
 
 		if (blank_u8 == 1) {
@@ -1112,16 +1104,6 @@ void BeepCipher_OK(uint8_t _cipher) {
 }
 //**********************************************************************
 
-void set_Prompt(uint8_t new_prompt_u8) {
-	prompt_u8 = new_prompt_u8;
-}
-//**********************************************************************
-
-void set_Blank(uint8_t new_blank_u8) {
-	blank_u8 = new_blank_u8;
-}
-//**********************************************************************
-
 void BeepError2(void) {
 	Beeper_12();	CipherPrint(0x12);	HAL_Delay(300);
 	Beeper_12();	CipherPrint(0x13);	HAL_Delay(300);
@@ -1147,6 +1129,33 @@ void BlankIndicatorStart (void) {
 
 void BlankIndicatorStop (void) {
 	HAL_TIM_Base_Stop_IT(&htim3); // start TIM3 interupt
+}
+//**********************************************************************
+
+void Blank_Set(uint8_t new_blank_u8) {
+	blank_u8 = new_blank_u8;
+}
+//**********************************************************************
+
+void Prompt_Start (void) {
+	TIM4->CNT = 0;
+	HAL_TIM_Base_Start_IT(&htim4) ; // start TIM4 prompt
+}
+//**********************************************************************
+
+void Prompt_Stop (void) {
+	HAL_TIM_Base_Stop_IT(&htim4); // stop TIM4 prompt
+}
+//**********************************************************************
+
+void Prompt_Set(uint8_t new_prompt_u8) {
+	TIM4->CNT = 0;
+	prompt_u8 = new_prompt_u8;
+}
+//**********************************************************************
+
+uint8_t Prompt_Status(void) {
+	return prompt_u8;
 }
 //**********************************************************************
 
@@ -1187,10 +1196,10 @@ void Show_Time(void) {
 
 	RTC_TimeTypeDef TimeStruct = { 0 }  ;
 	HAL_RTC_GetTime( &hrtc, &TimeStruct, RTC_FORMAT_BIN );
-	uint8_t _stopHour_u8   = TimeStruct.Hours   ;
-	uint8_t _stopMin_u8 = TimeStruct.Minutes ;
-	uint8_t _stopSec_u8  = TimeStruct.Seconds  ;
-	char DataChar[100];
+	uint8_t _stopHour_u8	= TimeStruct.Hours   ;
+	uint8_t _stopMin_u8 	= TimeStruct.Minutes ;
+	uint8_t _stopSec_u8  	= TimeStruct.Seconds  ;
+
 	sprintf(DataChar," Time %d:%02d:%02d\r\n", (int)_stopHour_u8, (int)_stopMin_u8, (int)_stopSec_u8);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
@@ -1225,7 +1234,7 @@ void Thingspeak_over_wiFi(uint32_t _startNumb, uint32_t _maxNumb ) {
 	CipherPrint(0x0F); // 'F'
 	Beeper_12();
 	HAL_Delay(1000);
-	char DataChar[100];
+
 	sprintf(DataChar,"Press 'D' to send on ThingSpeak\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
@@ -1239,7 +1248,7 @@ void Thingspeak_over_wiFi(uint32_t _startNumb, uint32_t _maxNumb ) {
 		Beeper_11();
 		CipherPrint(0x0F);
 
-		RingBuffer_DMA_Main(http_req);
+		RingBuffer_DMA_Main(http_req, THINGSPEAK_API_KEY_2);
 		Beeper_11();
 		CipherPrint(0x11);
 	}
@@ -1264,7 +1273,7 @@ void Write_to_EEPROM(uint32_t _startNumb_u32, uint32_t _maxNumb_u32 ) {
 	CipherPrint(0x0E);
 	Beeper_12();
 	HAL_Delay(1000);
-	char DataChar[100];
+
 	sprintf(DataChar,"** Press 'D' to write to EEPROM **\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
@@ -1327,26 +1336,11 @@ void Write_to_EEPROM(uint32_t _startNumb_u32, uint32_t _maxNumb_u32 ) {
 }
 //**********************************************************************
 
-void Prompt_Stop (void) {
-	HAL_TIM_Base_Stop_IT(&htim4); // stop TIM4 prompt
-}
-//**********************************************************************
-
-void Prompt_Start (void) {
-	HAL_TIM_Base_Start_IT(&htim4) ; // start TIM4 prompt
-}
-//**********************************************************************
-
-uint8_t Prompt_Status(void) {
-	return prompt_u8;
-}
-//**********************************************************************
-
 void Download_Statistics( uint32_t _startNumb, uint32_t _maxNumb ) {
 
 	Prompt_Stop() ;
 	BlankIndicatorStop() ;
-	char DataChar[100];
+
 	sprintf(DataChar," Download time statistics\r\n" ) ;
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
