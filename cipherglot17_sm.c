@@ -263,6 +263,10 @@ void CipherGlot_init(void) {
 }
 //**********************************************************************
 
+//**********************************************************************
+
+//**********************************************************************
+
 void CipherGlot_main(void) {
 	//Generate_New_Cipher();
 	uint8_t end_of_type_flag = 0;
@@ -357,20 +361,37 @@ void CipherGlot_main(void) {
 			current_cipher_number_u32 = start_cipher_number_u32;
 		}
 
+		uint8_t current_key_bonus = 0 ;
 		if (current_cipher_number_u32 > total_cipher_number_u32 ) {
 			total_cipher_number_u32++;
 			Generate_New_Cipher();
-			Bonus_Start();
-			uint8_t current_key_bonus = KeyPressed();
+			Bonus_Start(300);
+			Prompt_Set(0);
+			Prompt_Stop();
+			current_key_bonus = KeyPressed();
 			Bonus_Stop() ;
 			if (current_key_bonus != BONUS_CHAR) {
 				if ( current_key_bonus == cipher_arr_u8[current_cipher_number_u32]) {
 					Blynk_Magic_Set(current_key_bonus);
 					magic_cipher_qnt++;
 				} else {
-					cipher_arr_u8[current_cipher_number_u32] = current_key_bonus ;
-					Blynk_Force_Set(current_key_bonus);
+					Blynk_Force_Set_no(current_key_bonus);
 					force_cipher_qnt++;
+					Bonus_Start(1000);
+					Prompt_Set(0);
+					Prompt_Stop();
+					current_key_bonus = KeyPressed();
+					Bonus_Stop() ;
+					if (current_key_bonus != BONUS_CHAR) {
+						cipher_arr_u8[current_cipher_number_u32] = current_key_bonus ;
+						Blynk_Force_Set_yes(current_key_bonus);
+					} else {
+						BeepError2();
+						total_cipher_number_u32--;
+						current_cipher_number_u32--;
+						sprintf(DataChar,"\r\nForse set fail" );
+						HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+					}
 				}
 			}
 			Prompt_Set(0);
@@ -389,6 +410,11 @@ void CipherGlot_main(void) {
 		TheEnd();
 	}
 }
+//**********************************************************************
+
+//**********************************************************************
+
+//**********************************************************************
 //**********************************************************************
 
 void Generate_New_Cipher (void) {
@@ -1158,7 +1184,7 @@ uint8_t Prompt_Status(void) {
 void Show_QNT(uint32_t _startNumb, uint32_t _maxNumb) {
 	uint32_t cipher_QNT_u32 = _maxNumb + 1 - _startNumb;
 	char DataChar[100];
-	sprintf(DataChar,"\r\nQNT: %d\r\n", (int)cipher_QNT_u32);
+	sprintf(DataChar,"\r\nQnt: %d, magic: %d, force: %d\r\n", (int)cipher_QNT_u32, (int)magic_cipher_qnt, (int)force_cipher_qnt);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 	Prompt_Stop();
 	BlankIndicatorStop();
@@ -1180,7 +1206,7 @@ void Show_QNT(uint32_t _startNumb, uint32_t _maxNumb) {
 	CipherPrint(0x11);						HAL_Delay(100);		// 'blank'
 
 	Beeper_11();
-	CipherPrint(0x24);						HAL_Delay(500);		//	'o' upper
+	CipherPrint(0x24);						HAL_Delay(1000);	//	'o' upper
 	CipherPrint(0x11);						HAL_Delay(100);		// 'blank'
 
 	Beeper_11();
@@ -1192,7 +1218,7 @@ void Show_QNT(uint32_t _startNumb, uint32_t _maxNumb) {
 	CipherPrint(0x11);						HAL_Delay(100);		// 'blank'
 
 	Beeper_11();
-	CipherPrint(0x15);						HAL_Delay(500);		//	'o' lower
+	CipherPrint(0x15);						HAL_Delay(1000);		//	'o' lower
 	CipherPrint(0x11);						HAL_Delay(100);		// 'blank'
 
 	Beeper_11();
@@ -1236,7 +1262,7 @@ void Show_Time(void) {
 	CipherPrint(0x11);				HAL_Delay(100);
 
 	Beeper_12();
-	CipherPrint(0x29);				HAL_Delay(500);
+	CipherPrint(0x29);				HAL_Delay(1000);
 	CipherPrint(0x11);				HAL_Delay(100);
 
 	Beeper_11();
@@ -1248,7 +1274,7 @@ void Show_Time(void) {
 	CipherPrint(0x11);				HAL_Delay(100);
 
 	Beeper_12();
-	CipherPrint(0x31);				HAL_Delay(500);
+	CipherPrint(0x31);				HAL_Delay(1000);
 	CipherPrint(0x11);				HAL_Delay(100);
 
 	Beeper_11();
@@ -1402,8 +1428,9 @@ void Download_Statistics( uint32_t _startNumb, uint32_t _maxNumb ) {
 }
 //**********************************************************************
 
-void Bonus_Start(void) {
+void Bonus_Start(uint32_t _tim_period) {
 	TIM1->CNT = 0 ;
+	TIM1->ARR = _tim_period - 1;
 	HAL_TIM_Base_Start_IT(&htim1);
 }
 //**********************************************************************
@@ -1446,13 +1473,21 @@ void Blynk_Magic_Set(uint8_t _key_bonus) {
 	HAL_Delay(200);
 
 	CipherPrint( _key_bonus ) ;
+	Beeper_12();
+	HAL_Delay(500);
+
+	CipherPrint(0x10);
 	BeepCipher_OK(0);
 	HAL_Delay(200);
+
+	CipherPrint( _key_bonus ) ;
+	Beeper_12();
+	HAL_Delay(1000);
 }
 //**********************************************************************
 
-void Blynk_Force_Set(uint8_t _key_bonus) {
-	sprintf(DataChar,"\r\nForse set: %d ", _key_bonus);
+void Blynk_Force_Set_no(uint8_t _key_bonus) {
+	sprintf(DataChar,"\r\nPrompt forse set: %d ", _key_bonus);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 	CipherPrint(0x30);
 	BeepCipher_OK(0);
@@ -1471,9 +1506,29 @@ void Blynk_Force_Set(uint8_t _key_bonus) {
 	CipherPrint(0x31);
 	BeepCipher_OK(0);
 	HAL_Delay(200);
+}
+//**********************************************************************
 
-	CipherPrint( _key_bonus );
+void Blynk_Force_Set_yes(uint8_t _key_bonus) {
+	sprintf(DataChar,"\r\nForse set: %d ", _key_bonus);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+	CipherPrint(0x30);
 	BeepCipher_OK(0);
 	HAL_Delay(200);
+
+	CipherPrint(0x29);
+	BeepCipher_OK(0);
+	HAL_Delay(200);
+
+	CipherPrint(0x31);
+	BeepCipher_OK(0);
+	HAL_Delay(200);
+
+	CipherPrint(0x11);
+	HAL_Delay(100);
+
+	CipherPrint( _key_bonus ) ;
+	Beeper_12();
+	HAL_Delay(500);
 }
 //**********************************************************************
