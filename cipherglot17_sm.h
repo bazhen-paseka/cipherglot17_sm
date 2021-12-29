@@ -34,6 +34,7 @@
 	uint8_t	Bonus_Status	(void) ;
 
 	void Blynk_Magic_Set(uint8_t _key_bonus) ;
+	void Blynk_Force_Set(uint8_t _key_bonus) ;
 
 //**********************************************************************
 
