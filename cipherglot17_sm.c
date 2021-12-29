@@ -363,20 +363,7 @@ void CipherGlot_main(void) {
 			Bonus_Stop() ;
 			if (current_key_bonus != BONUS_CHAR) {
 				if ( current_key_bonus == cipher_arr_u8[current_cipher_number_u32]) {
-					sprintf(DataChar,"\r\nMAGIC set: %d ", current_key_bonus);
-					HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-					CipherPrint(0x31);
-					BeepCipher_OK(0);
-					HAL_Delay(200);
-					CipherPrint(0x29);
-					BeepCipher_OK(0);
-					HAL_Delay(200);
-					CipherPrint(0x30);
-					BeepCipher_OK(0);
-					HAL_Delay(200);
-					CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
-					BeepCipher_OK(0);
-					HAL_Delay(200);
+					Blynk_Magic_Set(current_key_bonus);
 				} else {
 					cipher_arr_u8[current_cipher_number_u32] = current_key_bonus ;
 					sprintf(DataChar,"\r\nForse set: %d ", current_key_bonus);
@@ -1421,3 +1408,20 @@ uint8_t Bonus_Status(void) {
 	return bonus_u8;
 }
 //**********************************************************************
+
+void Blynk_Magic_Set(uint8_t _key_bonus) {
+	sprintf(DataChar,"\r\nMAGIC set: %d ", _key_bonus);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+	CipherPrint(0x31);
+	BeepCipher_OK(0);
+	HAL_Delay(200);
+	CipherPrint(0x29);
+	BeepCipher_OK(0);
+	HAL_Delay(200);
+	CipherPrint(0x30);
+	BeepCipher_OK(0);
+	HAL_Delay(200);
+	CipherPrint( _key_bonus ) ;
+	BeepCipher_OK(0);
+	HAL_Delay(200);
+}
