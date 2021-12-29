@@ -59,6 +59,8 @@ uint32_t start_cipher_number_u32   	= 0 ;
 uint32_t current_cipher_number_u32 	= 0 ;
 uint32_t total_cipher_number_u32   	= 0 ;
 uint32_t previous_cipher_number_u32	= 0 ;
+uint32_t force_cipher_qnt 			= 0 ;
+uint32_t magic_cipher_qnt 			= 0 ;
 
 //**********************************************************************
 
@@ -364,9 +366,11 @@ void CipherGlot_main(void) {
 			if (current_key_bonus != BONUS_CHAR) {
 				if ( current_key_bonus == cipher_arr_u8[current_cipher_number_u32]) {
 					Blynk_Magic_Set(current_key_bonus);
+					magic_cipher_qnt++;
 				} else {
 					cipher_arr_u8[current_cipher_number_u32] = current_key_bonus ;
 					Blynk_Force_Set(current_key_bonus);
+					force_cipher_qnt++;
 				}
 			}
 			Prompt_Set(0);
@@ -1173,7 +1177,31 @@ void Show_QNT(uint32_t _startNumb, uint32_t _maxNumb) {
 
 	Beeper_11();
 	CipherPrint(cipher_QNT_u32%10);			HAL_Delay(500);
-	CipherPrint(0x11);						HAL_Delay(1000);		// 'blank'
+	CipherPrint(0x11);						HAL_Delay(100);		// 'blank'
+
+	Beeper_11();
+	CipherPrint(0x24);						HAL_Delay(500);		//	'o' upper
+	CipherPrint(0x11);						HAL_Delay(100);		// 'blank'
+
+	Beeper_11();
+	CipherPrint((magic_cipher_qnt/10)%10);	HAL_Delay(500);
+	CipherPrint(0x11);						HAL_Delay(100);
+
+	Beeper_11();
+	CipherPrint(magic_cipher_qnt % 10);		HAL_Delay(500);
+	CipherPrint(0x11);						HAL_Delay(100);		// 'blank'
+
+	Beeper_11();
+	CipherPrint(0x15);						HAL_Delay(500);		//	'o' lower
+	CipherPrint(0x11);						HAL_Delay(100);		// 'blank'
+
+	Beeper_11();
+	CipherPrint((force_cipher_qnt/10)%10);	HAL_Delay(500);
+	CipherPrint(0x11);						HAL_Delay(100);
+
+	Beeper_11();
+	CipherPrint(force_cipher_qnt % 10);		HAL_Delay(500);
+	CipherPrint(0x11);						HAL_Delay(100);		// 'blank'
 
 	BlankIndicatorStart();
 	Prompt_Start();
