@@ -21,17 +21,20 @@
 
 //**********************************************************************
 
-	void 	CipherGlot_init	(void);
-	void 	CipherGlot_main	(void);
+	void 	CipherGlot_init	(void)					;
+	void 	CipherGlot_main	(void)					;
 
-	void 	Prompt_Set		(uint8_t new_prompt_u8);
-	void 	Blank_Set		(uint8_t new_blank_u8);
-	uint8_t Blank_Status	(void) ;
+	void 	Prompt_Set		(uint8_t new_prompt_u8)	;
+	void 	Blank_Set		(uint8_t new_blank_u8)	;
+	uint8_t Blank_Status	(void) 					;
 
-	void 	Bonus_Start		(void) ;
-	void 	Bonus_Stop		(void) ;
-	void 	Bonus_Set		(uint8_t _status_u8) ;
-	uint8_t	Bonus_Status	(void) ;
+	void 	Bonus_Start		(uint32_t _tim_period)	;
+	void 	Bonus_Stop		(void) 					;
+	void 	Bonus_Set		(uint8_t _status_u8) 	;
+	uint8_t	Bonus_Status	(void) 					;
+
+	void 	Beep_Magic_Ok	(uint8_t m_key) 		;
+	void 	Beep_Magic_Wrong	(void)  			;
 
 //**********************************************************************
 
