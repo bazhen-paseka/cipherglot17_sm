@@ -352,8 +352,8 @@ void CipherGlot_main(void) {
 		}
 
 		if ( current_key_u8 == cipher_arr_u8[current_cipher_number_u32]) {
-			BeepCipher_OK();
 			CipherPrint(cipher_arr_u8[current_cipher_number_u32]);
+			BeepCipher_OK();
 			current_cipher_number_u32++;
 			Prompt_Set(0);
 		}
